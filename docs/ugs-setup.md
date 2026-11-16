@@ -35,6 +35,11 @@
 2. Unity 에디터 **Edit → Project Settings → Services** 에서 그 프로젝트로 연결 (조직·프로젝트 선택).
 
 ## 4. Unity Gaming Services (대시보드)
+진행 (2026-11-16): Cloud Save 동작 확인(EconSync 호출 성공), Relay 사용 가능, 리더보드 `trophies` 생성(높은 순, Latest score, 리셋 없음),
+Cloud Code 모듈 `DefenseBattleCloud` 배포 완료 (에디터 메뉴 **Tools → Defense Battle → Deploy Cloud Code**).
+남은 것: 2번 Google Play 로그인 (Play Console 1-4 이후). **4번 Economy 는 쓸 수 없다** - Unity 가 새 프로젝트의 Economy 가입을 받지 않는다
+("Economy is no longer accepting new project signups"). 영수증 검증을 다른 방법으로 바꿔야 한다 (결정 대기).
+
 1. **Cloud Save / Relay**: 켜기만 하면 된다 (별도 설정 없음).
 2. **Authentication → Identity providers → Google Play Games**: 1-4 의 웹 클라이언트 ID·보안 비밀 입력.
 3. **Leaderboards**: 새 리더보드
