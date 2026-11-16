@@ -37,6 +37,38 @@ namespace DefenseBattle.View
         [SerializeField] TMP_FontAsset m_font;
         [SerializeField] TMP_FontAsset m_boldFont;
         [SerializeField] TMP_FontAsset m_numberFont;
+        /// <summary>FusionPixel ja / zh-Hans / zh-Hant (SDF, 글꼴 폴백)</summary>
+        [SerializeField] TMP_FontAsset[] m_cjkFonts = new TMP_FontAsset[3];
+        [SerializeField] Sprite[] m_frames = new Sprite[0];
+        [SerializeField] Material m_hudTextMaterial;
+        Dictionary<string, Sprite> m_frameByName;
+
+        /// <summary>언어별 폴백 글꼴 (한국어·영어는 null)</summary>
+        public TMP_FontAsset CjkFont(string lang)
+        {
+            if (m_cjkFonts == null || m_cjkFonts.Length < 3) return null;
+            switch (lang)
+            {
+                case "ja": return m_cjkFonts[0];
+                case "zh-Hans": return m_cjkFonts[1];
+                case "zh-Hant": return m_cjkFonts[2];
+                default: return null;
+            }
+        }
+
+        /// <summary>UI 테두리 그림 (UI/Frame 파일 이름: btn_red, paper …), 없으면 null</summary>
+        public Sprite Frame(string name)
+        {
+            if (m_frameByName == null)
+            {
+                m_frameByName = new Dictionary<string, Sprite>(m_frames.Length);
+                foreach (Sprite s in m_frames) if (s != null) m_frameByName[s.name] = s;
+            }
+            return m_frameByName.TryGetValue(name, out Sprite sprite) ? sprite : null;
+        }
+
+        /// <summary>HUD 글자 머티리얼 (얇은 검은 테두리)</summary>
+        public Material HudTextMaterial => m_hudTextMaterial;
 
         Dictionary<string, Sprite> m_iconByName;
 
@@ -72,6 +104,14 @@ namespace DefenseBattle.View
 
 #if UNITY_EDITOR
         /// <summary>에디터 빌더 전용: 내용 채우기</summary>
+        public void EditorFillUi(TMP_FontAsset[] cjk, Sprite[] frames, Material hudText)
+        {
+            m_cjkFonts = cjk;
+            m_frames = frames;
+            m_hudTextMaterial = hudText;
+            m_frameByName = null;
+        }
+
         public void EditorFill(Sheet[] units, RaceSheets[] mobs, Sprite field, Sprite coin, Sprite[] icons, TMP_FontAsset font, TMP_FontAsset bold, TMP_FontAsset number)
         {
             m_numberFont = number;

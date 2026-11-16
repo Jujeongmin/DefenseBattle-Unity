@@ -32,6 +32,7 @@ namespace DefenseBattle.View
         /// <summary>접속(로그인·경제 동기화) 뒤 로비로 - 연결이 없으면 접속 화면이 다시 시도를 받는다</summary>
         void Start()
         {
+            Localization.Init(m_runner.Catalog);
             m_audio.SwitchBgm(Bgm.Menu);
             _ = m_boot.Run(ShowLaunch);
         }

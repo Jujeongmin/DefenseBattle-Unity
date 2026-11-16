@@ -29,7 +29,7 @@ namespace DefenseBattle.View.Tests
                 foreach (string name in new[] { "DragSurface", "GoldBadge", "Mythic", "Dynamic" })
                     Assert.IsNotNull(board.Find(name), name + " 는 정사각 전장 안에");
 
-                var runner = Object.FindFirstObjectByType<BattleRunner>();
+                var runner = Object.FindAnyObjectByType<BattleRunner>();
                 var so = new SerializedObject(runner);
                 Assert.AreEqual(board, so.FindProperty("m_boardArea").objectReferenceValue, "카메라도 정사각 칸에 맞춘다");
             }

@@ -408,9 +408,21 @@ public static class BattleHudBuilder
         t.textWrappingMode = TextWrappingModes.NoWrap;
         t.overflowMode = TextOverflowModes.Overflow;
         t.raycastTarget = false;
-        t.text = text;
+        // Loc(키) 로 만든 글자: 한국어로 굽지 않고 LocText 가 실행 중에 번역한다 (앞뒤 아이콘·숫자는 그대로)
+        int a = text.IndexOf(LocStart), b = text.IndexOf(LocEnd);
+        if (a >= 0 && b > a)
+        {
+            var lt = t.gameObject.AddComponent<DefenseBattle.View.LocText>();
+            lt.Set(text.Substring(a + 1, b - a - 1), text.Substring(0, a), text.Substring(b + 1));
+        }
+        else
+        {
+            t.text = text;
+        }
         return t;
     }
+
+    const char LocStart = '\u0001', LocEnd = '\u0002';
 
     /// <summary>크림 종이 위 진한 글자 (테두리 없는 픽셀 폰트)</summary>
     internal static TextMeshProUGUI InkTxt(Transform parent, string name, float size, TextAlignmentOptions align)
@@ -423,7 +435,8 @@ public static class BattleHudBuilder
 
     internal static Sprite FrameSprite(string name) => AssetDatabase.LoadAssetAtPath<Sprite>(Frame + name + ".png");
 
-    internal static string Loc(string key) => DefenseBattle.Core.Loc.Tl(key);
+    /// <summary>번역할 문장 표시 (Txt 가 LocText 로 바꾼다). Txt 가 아닌 곳에 쓰면 안 됨</summary>
+    internal static string Loc(string key) => LocStart + key + LocEnd;
 
     static void Set(Object target, string field, Object value) => BattleSceneBuilder.Set(target, field, value);
 

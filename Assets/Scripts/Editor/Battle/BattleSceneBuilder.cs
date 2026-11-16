@@ -92,9 +92,9 @@ public static class BattleSceneBuilder
         var audio = new GameObject("Audio").AddComponent<BattleAudio>();
         Set(audio, "m_catalog", AssetDatabase.LoadAssetAtPath<SoundCatalog>(SoundCatalog.AssetPath));
         Set(hud, "m_audio", audio);
-        Set(Object.FindFirstObjectByType<HeroPanel>(FindObjectsInactive.Include), "m_audio", audio);
-        Set(Object.FindFirstObjectByType<BattleFlow>(FindObjectsInactive.Include), "m_audio", audio);
-        Set(Object.FindFirstObjectByType<ZoneDragInput>(FindObjectsInactive.Include), "m_audio", audio);
+        Set(Object.FindAnyObjectByType<HeroPanel>(FindObjectsInactive.Include), "m_audio", audio);
+        Set(Object.FindAnyObjectByType<BattleFlow>(FindObjectsInactive.Include), "m_audio", audio);
+        Set(Object.FindAnyObjectByType<ZoneDragInput>(FindObjectsInactive.Include), "m_audio", audio);
 
         EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), ScenePath);
         AddToBuildSettingsFirst(ScenePath);

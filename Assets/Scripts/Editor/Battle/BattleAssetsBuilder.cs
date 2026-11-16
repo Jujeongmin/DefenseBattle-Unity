@@ -35,9 +35,34 @@ public static class BattleAssetsBuilder
         TMP_FontAsset number = BuildFont("Assets/Fonts/DefenseBattle/Galmuri11-Bold.ttf", NumberFontPath, GlyphRenderMode.SDFAA, 48, 6);
         BuildIconSpriteAsset();
         BuildCatalog(font, bold, number);
+        BuildUiCatalog();
         BuildSoundCatalog();
         AssetDatabase.SaveAssets();
         Debug.Log("[BattleAssets] 완료");
+    }
+
+    // ---------------- 로비 UI: 일본어·중국어 폴백 글꼴, 테두리 그림, HUD 글자 머티리얼 ----------------
+    static void BuildUiCatalog()
+    {
+        const string fonts = "Assets/Fonts/DefenseBattle/";
+        var cjk = new[]
+        {
+            BuildFont(fonts + "FusionPixel-ja.ttf", fonts + "FusionPixel-ja SDF.asset", GlyphRenderMode.SDFAA, 36, 5),
+            BuildFont(fonts + "FusionPixel-zh-hans.ttf", fonts + "FusionPixel-zh-hans SDF.asset", GlyphRenderMode.SDFAA, 36, 5),
+            BuildFont(fonts + "FusionPixel-zh-hant.ttf", fonts + "FusionPixel-zh-hant SDF.asset", GlyphRenderMode.SDFAA, 36, 5),
+        };
+        var frames = new List<Sprite>();
+        foreach (string dir in new[] { Art + "UI/Frame", Art + "UI/Common" })
+            foreach (string p in Directory.GetFiles(dir))
+            {
+                if (p.EndsWith(".meta")) continue;
+                var s = AssetDatabase.LoadAssetAtPath<Sprite>(p.Replace('\\', '/'));
+                if (s != null) frames.Add(s);
+            }
+        var hudText = AssetDatabase.LoadAssetAtPath<Material>(Generated + "HudText.mat");
+        var catalog = AssetDatabase.LoadAssetAtPath<SpriteCatalog>(SpriteCatalog.AssetPath);
+        catalog.EditorFillUi(cjk, frames.ToArray(), hudText);
+        EditorUtility.SetDirty(catalog);
     }
 
     // ---------------- 소리 ----------------
