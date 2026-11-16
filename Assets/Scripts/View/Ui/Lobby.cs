@@ -30,6 +30,7 @@ namespace DefenseBattle.View
         Modal m_modal;
         Modal m_panel;
         CampaignPages m_campaign;
+        DeckPage m_deck;
         bool m_busy;
         bool m_roadBusy;
         bool m_dirty;
@@ -46,6 +47,8 @@ namespace DefenseBattle.View
             m_panel = new Modal(m_popups, false);
             m_modal = new Modal(m_popups);
             m_campaign = new CampaignPages(m_catalog, m_panel, m_modal, m_toast, m_audio, Launch, () => m_dirty = true);
+            m_deck = new DeckPage(m_catalog, m_panel, m_modal, m_toast, m_audio, () => m_dirty = true);
+            m_campaign.OpenDeck = m_deck.Open; // 스테이지 정보 → 덱 편집 → 다시 스테이지 정보
             EconCache.Changed += OnEcon;
             Localization.Changed += OnEcon;
         }
@@ -303,7 +306,7 @@ namespace DefenseBattle.View
             {
                 string dot = LobbyRules.UnitsDotKey(e);
                 NavButton(nav.transform, "helmet", Loc.Tl("덱"), LobbyRules.FeatureNew(e, seen, "units"), dot != null && !seen.Contains(dot),
-                    () => { LocalMeta.MarkSeen("units"); if (dot != null) LocalMeta.MarkSeen(dot); m_toast.Show(Loc.Tl("준비 중")); });
+                    () => { LocalMeta.MarkSeen("units"); if (dot != null) LocalMeta.MarkSeen(dot); m_deck.Open(); });
             }
             if (Progress.FeatureUnlocked(e, "research"))
                 NavButton(nav.transform, "flask", Loc.Tl("연구"), LobbyRules.FeatureNew(e, seen, "research"), false,
