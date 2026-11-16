@@ -193,6 +193,23 @@ namespace DefenseBattle.View
             }
         }
 
+        /// <summary>고리 모양 그라데이션: 반지름 r0 에서 c0 → r1 에서 c1 (여러 색 지점 그라데이션을 이어 그릴 때)</summary>
+        public void RadialRing(float x, float y, float r0, float r1, Color32 c0, Color32 c1)
+        {
+            Vector2[] u = Unit(Segments(r1));
+            int ring = m_verts.Count;
+            for (int i = 0; i < u.Length; i++)
+            {
+                Add(x + u[i].x * r0, y + u[i].y * r0, c0);
+                Add(x + u[i].x * r1, y + u[i].y * r1, c1);
+            }
+            for (int i = 0; i < u.Length; i++)
+            {
+                int a = ring + i * 2, b = ring + (i + 1) % u.Length * 2;
+                Quad(a, a + 1, b + 1, b);
+            }
+        }
+
         // ---------------- 내부 ----------------
         int Add(float x, float y, Color32 c)
         {
