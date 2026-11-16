@@ -210,6 +210,7 @@ namespace DefenseBattle.Server.Tests
             for (int i = 0; i < 20; i++)
             {
                 RunTicket b = await rig.Server.PvpBotStart("p1");
+                rig.Clock.Advance(GameServer.BotMinMs);
                 await rig.Server.PvpBotResult("p1", b.Id, true);
             }
             Assert.Greater((await rig.Server.EconSync("p1")).Econ.Pvp.Trophies, 500);
@@ -319,11 +320,28 @@ namespace DefenseBattle.Server.Tests
         }
 
         [Test]
+        public async Task BotResult_WinFasterThanMinimumIgnored_LossAlwaysCounts()
+        {
+            var rig = new Rig();
+            RunTicket t = await rig.Server.PvpBotStart("p1");
+            rig.Clock.Advance(GameServer.BotMinMs - 1);
+            Assert.IsNull(await rig.Server.PvpBotResult("p1", t.Id, true), "시작 직후 승리 보고는 무시 (조작 방지)");
+            Assert.AreEqual(0, (await rig.Server.EconSync("p1")).Econ.Pvp.Trophies);
+            RunTicket t2 = await rig.Server.PvpBotStart("p1");
+            BotResultReply loss = await rig.Server.PvpBotResult("p1", t2.Id, false);
+            Assert.IsNotNull(loss, "일찍 나가도 패배는 반영 (패배 피하기 방지)");
+            RunTicket t3 = await rig.Server.PvpBotStart("p1");
+            rig.Clock.Advance(GameServer.BotMinMs);
+            Assert.IsNotNull(await rig.Server.PvpBotResult("p1", t3.Id, true));
+        }
+
+        [Test]
         public async Task BotResult_WrongIdIgnored_RightIdOnce()
         {
             var rig = new Rig();
             Assert.IsNull(await rig.Server.PvpBotResult("p1", "nope", true));
             RunTicket t = await rig.Server.PvpBotStart("p1");
+            rig.Clock.Advance(GameServer.BotMinMs);
             BotResultReply r = await rig.Server.PvpBotResult("p1", t.Id, true);
             Assert.AreEqual(30, r.Delta);
             Assert.AreEqual(30, r.Trophies);
@@ -344,6 +362,7 @@ namespace DefenseBattle.Server.Tests
             Assert.AreEqual("용사", await rig.Server.SetNick("p1", "   "));
             Assert.AreEqual("가나다라마바사아자차카타", await rig.Server.SetNick("p1", "가나다라마바사아자차카타파하")); // 12자
             RunTicket t = await rig.Server.PvpBotStart("p1");
+            rig.Clock.Advance(GameServer.BotMinMs);
             await rig.Server.PvpBotResult("p1", t.Id, true);
             await rig.Server.SetNick("p1", "새이름");
             Assert.AreEqual("새이름", rig.Rank.Rows["p1"].Nick);
