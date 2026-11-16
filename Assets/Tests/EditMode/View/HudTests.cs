@@ -97,12 +97,12 @@ namespace DefenseBattle.View.Tests
         public void WaveLabel_Format()
         {
             var buf = new char[32];
-            var stage = new Game(new BattleLaunch(BattleLaunch.Mode.Stage, "1-1").MakeOptions());
+            var stage = new Game(new BattleLaunch(BattleLaunch.Mode.Stage, "1-1").MakeOptions(EconState.Fresh("S2026-11")));
             stage.StartNextWave();
             stage.StartNextWave();
             stage.StartNextWave();
             Assert.AreEqual("Wave 3/" + Campaign.Get("1-1").Waves, new string(buf, 0, BattleHud.WaveLabel(stage, buf)));
-            var endless = new Game(new BattleLaunch(BattleLaunch.Mode.Endless, null).MakeOptions());
+            var endless = new Game(new BattleLaunch(BattleLaunch.Mode.Endless, null).MakeOptions(EconState.Fresh("S2026-11")));
             // 무한 모드도 총 50웨이브 (ui.ts: totalWaves 가 Infinity 인 건 PvP 뿐)
             Assert.AreEqual("Wave 1/" + Waves.Total, new string(buf, 0, BattleHud.WaveLabel(endless, buf)), "시작 전에도 1");
             var pvp = new Game(new GameOptions { Mode = GameMode.Pvp, Seed = 1 });

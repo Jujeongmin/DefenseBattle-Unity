@@ -6,5 +6,7 @@ namespace DefenseBattle.View
         public string Label;
         public ResultStyle Style;
         public ResultAction Action;
+        /// <summary>Next / StageInfo 가 열 스테이지</summary>
+        public string StageId;
     }
 }

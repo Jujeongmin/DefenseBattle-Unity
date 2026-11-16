@@ -15,6 +15,7 @@ namespace DefenseBattle.View
     {
         [SerializeField] BattleRunner m_runner;
         [SerializeField] BattleAudio m_audio;
+        [SerializeField] Toast m_toast;
         [Header("상단바")]
         [SerializeField] Image m_portrait;
         [SerializeField] TextMeshProUGUI m_race;
@@ -47,8 +48,9 @@ namespace DefenseBattle.View
         [SerializeField] UnitStacksView m_stacks;
 
         const string SpeedKey = "battle.speed";
-        /// <summary>배속 버튼 (3배속은 광고 제거 후 - 3단계 메타)</summary>
-        static readonly double[] s_speeds = { 1, 2 };
+        /// <summary>배속 (ui.ts speeds): 3배속은 광고 제거 패키지가 있을 때만</summary>
+        static readonly double[] s_speeds2 = { 1, 2 }, s_speeds3 = { 1, 2, 3 };
+        double[] m_speeds = s_speeds2;
         static readonly Color32 Red = new Color32(0xe5, 0x48, 0x4d, 255), RedBright = new Color32(0xff, 0x6c, 0x73, 255);
         static readonly Color32 Gold = new Color32(0xff, 0xc9, 0x28, 255), GoldShortColor = new Color32(0xff, 0x52, 0x52, 255);
 
@@ -118,8 +120,9 @@ namespace DefenseBattle.View
             m_stacks.Bind(g, m_runner.Catalog);
             // 배속은 판이 바뀌어도 마지막으로 고른 값 (쓸 수 없는 배속이면 1배속)
             double saved = PlayerPrefs.GetFloat(SpeedKey, 1);
-            m_speedIdx = Math.Max(0, Array.IndexOf(s_speeds, saved));
-            g.Speed = s_speeds[m_speedIdx];
+            m_speeds = EconCache.State.AdRemoved ? s_speeds3 : s_speeds2;
+            m_speedIdx = Math.Max(0, Array.IndexOf(m_speeds, saved));
+            g.Speed = m_speeds[m_speedIdx];
             m_speedText.text = g.Speed + "x";
             m_pauseIcon.sprite = m_runner.Catalog.Icon("pause");
             BattleLaunch l = m_runner.Launch;
@@ -235,8 +238,9 @@ namespace DefenseBattle.View
         {
             if (m_game == null) return;
             m_audio.Play(Sfx.Button);
-            m_speedIdx = (m_speedIdx + 1) % s_speeds.Length;
-            m_game.Speed = s_speeds[m_speedIdx];
+            if (m_speeds.Length == 2 && m_speedIdx == 1 && m_toast != null) m_toast.Show(Loc.Tl("3배속은 광고 제거 패키지로 해금돼요"));
+            m_speedIdx = (m_speedIdx + 1) % m_speeds.Length;
+            m_game.Speed = m_speeds[m_speedIdx];
             m_speedText.text = m_game.Speed + "x";
             PlayerPrefs.SetFloat(SpeedKey, (float)m_game.Speed);
         }

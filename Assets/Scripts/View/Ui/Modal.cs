@@ -13,9 +13,15 @@ namespace DefenseBattle.View
     public sealed class Modal
     {
         readonly Transform m_host;
+        readonly bool m_onTop;
         GameObject m_open;
 
-        public Modal(Transform host) => m_host = host;
+        /// <summary>onTop = 확인 창 층 (늘 맨 위), 아니면 페이지 층 (확인 창 아래)</summary>
+        public Modal(Transform host, bool onTop = true)
+        {
+            m_host = host;
+            m_onTop = onTop;
+        }
 
         public bool IsOpen => m_open != null;
 
@@ -33,6 +39,49 @@ namespace DefenseBattle.View
             RectTransform content = Shell(title, out RectTransform buttons, () => { Close(); closed?.Invoke(); });
             UnityEngine.Object.Destroy(buttons.gameObject);
             return content;
+        }
+
+        /// <summary>
+        /// 큰 페이지 창 (원본 openOverlay('panel')): 화면 거의 전체, 제목 리본 + 닫기 + 세로 스크롤 내용.
+        /// 돌려준 칸에 Column 이 붙어 있다.
+        /// </summary>
+        public RectTransform Panel(string title, Action closed = null)
+        {
+            Close();
+            RectTransform root = Ui.Rect(m_host, "Panel");
+            Ui.Fill(root);
+            Order(root);
+            m_open = root.gameObject;
+            Action dismiss = () => { Close(); closed?.Invoke(); };
+            Image dim = Ui.Image(root, null, Ui.Dim, "Dim");
+            dim.raycastTarget = true;
+            Ui.Fill(dim.rectTransform);
+
+            Image paper = Ui.Frame(root, "paper", 1.4f, "Dialog");
+            paper.raycastTarget = true;
+            Ui.Fill(paper.rectTransform, 18, 24, 18, 64);
+            Ui.Column(paper.transform, 10, 26, 26, 70, 26);
+
+            Image ribbon = Ui.Frame(paper.transform, "ribbon_red", 1.3f, "Ribbon");
+            ribbon.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            Ui.Place(ribbon.rectTransform, new Vector2(0.5f, 1), new Vector2(0, -6), new Vector2(460, 90));
+            Ui.Fill(Ui.Line(ribbon.transform, title, 34, Ui.Cream).rectTransform, 30, 18, 30, 8);
+
+            Button x = Ui.Hit(paper.transform, dismiss, "Close");
+            x.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            Ui.Place(x.GetComponent<RectTransform>(), new Vector2(1, 1), new Vector2(-34, -34), new Vector2(68, 68));
+            Ui.Fill(Ui.Icon(x.transform, "close", 40, Ui.Ink2).rectTransform, 12, 12, 12, 12);
+
+            RectTransform content = Ui.Scroll(paper.transform, out ScrollRect _);
+            Ui.Size(content.parent.gameObject, -1, -1, -1, 1);
+            Ui.Column(content, 14, 4, 4, 4, 16);
+            return content;
+        }
+
+        void Order(Transform root)
+        {
+            if (m_onTop) root.SetAsLastSibling();
+            else root.SetAsFirstSibling();
         }
 
         public void Close()
@@ -64,6 +113,7 @@ namespace DefenseBattle.View
             Close();
             RectTransform root = Ui.Rect(m_host, "Modal");
             Ui.Fill(root);
+            Order(root);
             m_open = root.gameObject;
             Button dim = Ui.Hit(root, dismiss, "Dim");
             dim.GetComponent<Image>().color = Ui.Dim;

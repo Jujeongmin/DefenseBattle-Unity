@@ -28,6 +28,8 @@ namespace DefenseBattle.View
         public event Action<BattleLaunch> Play;
 
         Modal m_modal;
+        Modal m_panel;
+        CampaignPages m_campaign;
         bool m_busy;
         bool m_roadBusy;
         bool m_dirty;
@@ -41,7 +43,9 @@ namespace DefenseBattle.View
         void Awake()
         {
             Ui.Init(m_catalog);
+            m_panel = new Modal(m_popups, false);
             m_modal = new Modal(m_popups);
+            m_campaign = new CampaignPages(m_catalog, m_panel, m_modal, m_toast, m_audio, Launch, () => m_dirty = true);
             EconCache.Changed += OnEcon;
             Localization.Changed += OnEcon;
         }
@@ -63,6 +67,7 @@ namespace DefenseBattle.View
         public void Hide()
         {
             m_modal.Close();
+            m_panel.Close();
             m_root.SetActive(false);
         }
 
@@ -267,11 +272,11 @@ namespace DefenseBattle.View
             string next = Progress.NextStageId(e);
             ModeCard(row, "btn_green", "map", Loc.Tl("캠페인"),
                 allCleared ? Loc.Tl("{0} 모두 클리어", Loc.Icon("check")) : Loc.Tl("스테이지 {0}", next), false,
-                () => Launch(new BattleLaunch(BattleLaunch.Mode.Stage, next)));
+                m_campaign.OpenStages);
             if (Progress.FeatureUnlocked(e, "endless"))
                 ModeCard(row, "btn_purple", "infinity", Loc.Tl("무한 모드"), Loc.Tl("최고 {0}웨이브", LocalMeta.Data.BestWave),
                     LobbyRules.FeatureNew(e, LocalMeta.Data.SeenFeatures, "endless"),
-                    () => { LocalMeta.MarkSeen("endless"); Launch(new BattleLaunch(BattleLaunch.Mode.Endless, null)); });
+                    () => { LocalMeta.MarkSeen("endless"); m_campaign.OpenEndless(); m_dirty = true; });
         }
 
         void ModeCard(Transform row, string frame, string icon, string title, string desc, bool isNew, Action click)
@@ -332,6 +337,12 @@ namespace DefenseBattle.View
             Hide();
             Play?.Invoke(l);
         }
+
+        /// <summary>결과 화면 → 스테이지 정보 (다음 스테이지 / 다시 하기)</summary>
+        public void OpenStageInfo(string id) => m_campaign.OpenStageInfo(id);
+
+        /// <summary>덱 편집 (5단계 덱 페이지가 연결)</summary>
+        public CampaignPages Pages => m_campaign;
 
         // ======================= 상자 (chests.ts tapChest) =======================
         async void TapChest(int i)

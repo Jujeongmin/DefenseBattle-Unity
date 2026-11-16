@@ -31,7 +31,7 @@ namespace DefenseBattle.View
         /// <summary>흔들림 대상 (전장 루트)</summary>
         [SerializeField] Transform m_boardRoot;
         [SerializeField] ZoneDragInput m_drag;
-        /// <summary>씬이 열리면 바로 BattleLaunch.Current 를 시작 (끄면 시작 화면이 고른다)</summary>
+        /// <summary>씬이 열리면 바로 1-1 을 시작 (테스트용 - 게임에서는 끄고 로비가 고른다)</summary>
         [SerializeField] bool m_autoStart = true;
 
         readonly List<double> m_steps = new List<double>(8);
@@ -60,7 +60,7 @@ namespace DefenseBattle.View
             m_texts.Init(m_catalog.NumberFont);
             m_actors.Labels = m_texts;
             m_effects.Init(m_catalog, m_spriteMaterial, m_texts, m_boardRoot);
-            if (m_autoStart) StartGame(BattleLaunch.Current);
+            if (m_autoStart) StartGame(new BattleLaunch(BattleLaunch.Mode.Stage, "1-1"));
         }
 
         /// <summary>판을 내린다 (로비로) - 전장은 빈 바닥만</summary>
@@ -84,14 +84,15 @@ namespace DefenseBattle.View
         {
             if (Game != null) Game.GameEnded -= OnGameEnded;
             Launch = launch;
-            Game = new Game(launch.MakeOptions());
+            Game = new Game(launch.MakeOptions(EconCache.State)); // 덱·레벨·연구 = 서버 경제 상태
             Game.GameEnded += OnGameEnded;
             m_board.ResetState();
             m_actors.ResetState();
             GameStarted?.Invoke(Game);
         }
 
-        public void Restart() => StartGame(Launch);
+        /// <summary>같은 판 다시 (부스터 없이)</summary>
+        public void Restart() => StartGame(Launch.Again());
 
         void OnGameEnded(GameOverData d) => GameOver?.Invoke(d);
 

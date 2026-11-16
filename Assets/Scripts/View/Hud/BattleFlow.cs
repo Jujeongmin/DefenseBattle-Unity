@@ -20,6 +20,10 @@ namespace DefenseBattle.View
 
         GameOverData m_last;
         bool m_pausedForConfirm;
+        bool m_tutorialRun;
+        bool m_finishing;
+        ResultView m_shown;
+        readonly RunSession m_run = new RunSession();
 
         void Awake()
         {
@@ -27,6 +31,7 @@ namespace DefenseBattle.View
             m_hud.ExitRequested += OnExit;
             m_lobby.Play += OnChosen;
             m_runner.GameStarted += g => m_audio.Bind(g); // 전투 음악 + 엔진 소리 (다시 하기 포함)
+            m_run.Notice += m => m_toast.Show(m);
         }
 
         /// <summary>접속(로그인·경제 동기화) 뒤 로비로 - 연결이 없으면 접속 화면이 다시 시도를 받는다</summary>
@@ -45,18 +50,38 @@ namespace DefenseBattle.View
             m_lobby.Show();
         }
 
+        /// <summary>판 시작 (main.ts launch): 메타 옵션으로 열고, 서버에 시작 기록</summary>
         void OnChosen(BattleLaunch l)
         {
-            BattleLaunch.Current = l;
             CloseResult();
+            m_lobby.Hide();
+            // 첫 튜토리얼 판 (결과 반영 전에 판단)
+            m_tutorialRun = l.Kind == BattleLaunch.Mode.Stage && l.StageId == "1-1" && !Progress.FeatureUnlocked(EconCache.State, "pvp");
             m_runner.StartGame(l);
+            m_run.Begin(l, m_runner.Game);
         }
 
         void OnGameOver(GameOverData d)
         {
             m_last = d;
-            Game g = m_runner.Game;
-            ShowResult(ResultFlow.ForGameOver(d, g, m_runner.Launch, RewardAds.Service.IsReady));
+            ResultView revive = ResultFlow.ForGameOver(d, m_runner.Game, RewardAds.Service.IsReady);
+            if (revive != null) ShowResult(revive);
+            else Finish();
+        }
+
+        /// <summary>최종 결과: 서버 보상을 받은 뒤 보여 준다 (main.ts finishSolo)</summary>
+        async void Finish()
+        {
+            if (m_finishing) return;
+            m_finishing = true;
+            m_drag.Blocked = true;
+            m_result.Hide();
+            BattleLaunch l = m_runner.Launch;
+            GameOverData d = m_last;
+            RunOutcome o = await m_run.End(l, d, m_tutorialRun);
+            m_finishing = false;
+            if (m_runner.Launch != l || m_runner.Game == null) return; // 기다리는 사이 로비로 나갔음
+            ShowResult(ResultFlow.Final(d, l, o, EconCache.State));
         }
 
         void OnExit()
@@ -71,6 +96,7 @@ namespace DefenseBattle.View
 
         void ShowResult(ResultView v)
         {
+            m_shown = v;
             m_drag.Blocked = true;
             m_result.Show(v, OnAction);
         }
@@ -100,11 +126,19 @@ namespace DefenseBattle.View
                     });
                     break;
                 case ResultAction.GiveUp:
-                    ShowResult(ResultFlow.Final(m_last, m_runner.Launch));
+                    Finish();
                     break;
                 case ResultAction.Retry:
-                    CloseResult();
-                    m_runner.Restart();
+                    OnChosen(m_runner.Launch.Again());
+                    break;
+                case ResultAction.Next:
+                case ResultAction.StageInfo:
+                    string id = FindStage(a);
+                    ToLobby();
+                    m_lobby.OpenStageInfo(id);
+                    break;
+                case ResultAction.Double:
+                    DoubleReward();
                     break;
                 case ResultAction.Lobby:
                     ToLobby();
@@ -117,10 +151,39 @@ namespace DefenseBattle.View
             }
         }
 
+        string FindStage(ResultAction a)
+        {
+            foreach (ResultButton b in m_shown.Buttons) if (b.Action == a) return b.StageId;
+            return m_runner.Launch.StageId;
+        }
+
+        /// <summary>광고 보고 직전 판 보상 한 번 더 (main.ts doubleReward - 금액은 서버가 정한다)</summary>
+        void DoubleReward()
+        {
+            ResultView v = m_shown;
+            RewardAds.Service.Show(async ok =>
+            {
+                if (!ok) return;
+                int amount = 0;
+                try { amount = await CloudClient.Econ<int>(CloudApi.AdReward, CloudClient.Args("doubleReward", true)); }
+                catch (System.Exception ex) { Debug.LogWarning("[Flow] AdReward 실패: " + ex.Message); }
+                if (amount <= 0) { m_toast.Show(Loc.Tl("서버에 연결할 수 없어요.\n인터넷 연결을 확인해 주세요.")); return; }
+                m_audio.Play(Sfx.Coin);
+                m_toast.Show(Loc.Tl("보상 2배! {0} +{1}", Loc.Icon("gem"), amount * 2)); // 더 받은 양이 아니라 2배가 된 합계
+                if (v != m_shown) return;
+                v.Buttons.RemoveAll(b => b.Action == ResultAction.Double);
+                for (int i = 0; i < v.Rewards.Count; i++)
+                    if (v.Rewards[i].StartsWith(Loc.Icon("gem"))) { v.Rewards[i] += " <color=#7CFC7C>+" + amount + "</color>"; break; }
+                ShowResult(v);
+            });
+        }
+
         void ToLobby()
         {
             CloseResult();
             m_pausedForConfirm = false;
+            m_finishing = false;
+            m_run.Abandon();
             m_runner.Stop();
             ShowLobby();
         }

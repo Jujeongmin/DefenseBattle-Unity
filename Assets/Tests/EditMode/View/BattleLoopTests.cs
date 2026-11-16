@@ -60,17 +60,33 @@ namespace DefenseBattle.View.Tests
         [Test]
         public void Launch_StageOptions()
         {
-            GameOptions o = new BattleLaunch(BattleLaunch.Mode.Stage, "1-1").MakeOptions();
+            GameOptions o = new BattleLaunch(BattleLaunch.Mode.Stage, "1-1").MakeOptions(EconState.Fresh("S2026-11"));
             Assert.AreEqual("1-1", o.StageId);
             Assert.AreEqual(Campaign.Get("1-1").Waves, o.WaveCount);
             CollectionAssert.AreEqual(Units.Starter, o.Deck);
-            Assert.IsFalse(o.UseResearch);
+            Assert.IsTrue(o.UseResearch, "메타 연구·유닛 레벨을 판에 넣는다");
+            Assert.AreEqual(1, o.StartGoldMult);
+        }
+
+        [Test]
+        public void Launch_UsesServerDeckLevelsAndBooster()
+        {
+            EconState e = EconState.Fresh("S2026-11");
+            e.UnitLevels[Job.Ranger] = 4;
+            e.Deck = new System.Collections.Generic.List<Job> { Job.Ranger, Job.Archer };
+            e.Research[ResearchKey.GoldGain] = 2;
+            GameOptions o = new BattleLaunch(BattleLaunch.Mode.Stage, "1-3", goldBooster: true).MakeOptions(e);
+            CollectionAssert.AreEqual(e.Deck, o.Deck);
+            Assert.AreEqual(4, o.UnitLevels[Job.Ranger]);
+            Assert.AreEqual(2, o.Research[ResearchKey.GoldGain]);
+            Assert.AreEqual(Progress.DeckMin(e), o.DeckMin);
+            Assert.AreEqual(2, o.StartGoldMult);
         }
 
         [Test]
         public void Launch_EndlessOptions()
         {
-            GameOptions o = new BattleLaunch(BattleLaunch.Mode.Endless, null).MakeOptions();
+            GameOptions o = new BattleLaunch(BattleLaunch.Mode.Endless, null).MakeOptions(EconState.Fresh("S2026-11"));
             Assert.IsNull(o.StageId);
             Assert.AreEqual(0, o.WaveCount);
         }

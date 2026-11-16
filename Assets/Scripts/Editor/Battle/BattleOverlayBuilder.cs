@@ -33,6 +33,7 @@ public static class BattleOverlayBuilder
         BattleSceneBuilder.Set(flow, "m_lobby", lobby);
         BattleSceneBuilder.Set(flow, "m_drag", drag);
         BattleSceneBuilder.Set(flow, "m_toast", toast);
+        BattleSceneBuilder.Set(hud, "m_toast", toast);
         BattleSceneBuilder.Set(flow, "m_boot", boot);
         var so = new SerializedObject(runner);
         so.FindProperty("m_autoStart").boolValue = false; // 시작 화면이 고른다
