@@ -31,6 +31,9 @@ namespace DefenseBattle.View
         Modal m_panel;
         CampaignPages m_campaign;
         DeckPage m_deck;
+        RevealPopup m_reveal;
+        ResearchPage m_research;
+        ShopPage m_shop;
         bool m_busy;
         bool m_roadBusy;
         bool m_dirty;
@@ -48,6 +51,9 @@ namespace DefenseBattle.View
             m_modal = new Modal(m_popups);
             m_campaign = new CampaignPages(m_catalog, m_panel, m_modal, m_toast, m_audio, Launch, () => m_dirty = true);
             m_deck = new DeckPage(m_catalog, m_panel, m_modal, m_toast, m_audio, () => m_dirty = true);
+            m_reveal = new RevealPopup(this, m_popups, m_catalog, m_audio);
+            m_research = new ResearchPage(m_panel, m_toast, m_audio, () => m_dirty = true);
+            m_shop = new ShopPage(m_panel, m_modal, m_toast, m_audio, m_reveal, () => m_dirty = true);
             m_campaign.OpenDeck = m_deck.Open; // 스테이지 정보 → 덱 편집 → 다시 스테이지 정보
             EconCache.Changed += OnEcon;
             Localization.Changed += OnEcon;
@@ -71,6 +77,7 @@ namespace DefenseBattle.View
         {
             m_modal.Close();
             m_panel.Close();
+            m_reveal.Close();
             m_root.SetActive(false);
         }
 
@@ -310,7 +317,7 @@ namespace DefenseBattle.View
             }
             if (Progress.FeatureUnlocked(e, "research"))
                 NavButton(nav.transform, "flask", Loc.Tl("연구"), LobbyRules.FeatureNew(e, seen, "research"), false,
-                    () => { LocalMeta.MarkSeen("research"); m_toast.Show(Loc.Tl("준비 중")); });
+                    () => { LocalMeta.MarkSeen("research"); m_research.Open(); });
             if (Progress.FeatureUnlocked(e, "quests"))
                 NavButton(nav.transform, "scroll", Loc.Tl("퀘스트"), LobbyRules.FeatureNew(e, seen, "quests"), false,
                     () => { LocalMeta.MarkSeen("quests"); m_toast.Show(Loc.Tl("준비 중")); });
@@ -332,7 +339,7 @@ namespace DefenseBattle.View
             else if (dot) Ui.Dot(b.transform);
         }
 
-        void OpenShop() => m_toast.Show(Loc.Tl("준비 중"));
+        void OpenShop() => m_shop.Open();
 
         void Launch(BattleLaunch l)
         {
@@ -375,16 +382,8 @@ namespace DefenseBattle.View
             });
         }
 
-        /// <summary>카드 공개 (6단계에서 연출 창으로 바꾼다): 받은 카드·보석 목록</summary>
-        void ShowReveal(Reveal r)
-        {
-            if (r == null) return;
-            m_audio.Play(Sfx.Unlock);
-            var sb = new System.Text.StringBuilder();
-            foreach (CardDrop d in r.Drops) sb.Append(Loc.Tl(Units.Get(d.Job).Kr)).Append(" ×").Append(d.N).Append('\n');
-            if (r.Gems > 0) sb.Append(Loc.Icon("gem")).Append(' ').Append(r.Gems);
-            m_modal.Alert(r.Title ?? Loc.Tl("상자"), sb.ToString());
-        }
+        /// <summary>카드 공개 연출 (쌓이면 차례로)</summary>
+        public void ShowReveal(Reveal r) => m_reveal.Show(r, () => m_dirty = true);
 
         /// <summary>도달했지만 안 받은 로드 보상은 서버에 받기를 요청한다 (menu.ts render 앞부분)</summary>
         async void ClaimRoadIfNeeded(EconState e)
