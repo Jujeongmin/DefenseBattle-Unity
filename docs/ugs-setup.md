@@ -30,7 +30,7 @@
 3. 앱 ID → Unity `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings`, 광고 단위 ID → `Assets/Scripts/Ads/AdMobRewardedAdService.cs` (PC 작업 때 같이 바꾼다 - 지금 값은 예전 앱 것).
 4. 개인정보·동의 → GDPR 동의 메시지 만들기 (기존 앱과 같은 방식).
 
-## 3. Unity Cloud - 프로젝트 연결
+## 3. Unity Cloud - 프로젝트 연결 (완료 2026-11-16: 조직 anjshdkdl99, 프로젝트 ID `8dad958b-a0aa-45ae-852d-40249312c36d`, 환경 `production`)
 1. <https://cloud.unity.com> → 새 프로젝트 "Defense Battle".
 2. Unity 에디터 **Edit → Project Settings → Services** 에서 그 프로젝트로 연결 (조직·프로젝트 선택).
 

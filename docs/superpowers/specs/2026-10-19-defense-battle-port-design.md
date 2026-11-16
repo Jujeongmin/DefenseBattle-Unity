@@ -107,7 +107,7 @@ PvP 동기화 모델은 원본과 같다: **각 클라이언트가 자기 전장
 
 | 단계 | 상태 |
 | --- | --- |
-| 0. 세팅 | 거의 완료 - MCP 연결, 앱 정보, 에셋 복사(그림 336·소리 20·폰트 TTF 5) + 임포트 자동 설정, 패키지 추가(2026-11-16: Test Framework 1.6.0, Authentication 3.9.0, Cloud Save 3.4.2, Cloud Code 2.10.4, Leaderboards 2.3.5, Multiplayer 2.4.1, Netcode for GameObjects 2.14.0), 로그인 코드 `Scripts/Services/UgsSession` 완료. **남은 것: Unity Cloud 프로젝트 연결(`docs/ugs-setup.md` 3번, 사용자)** - 지금은 `UnityProjectNotLinkedException` 으로 로그인 실패, 연결 뒤 빈 씬 + `UgsLoginProbe` 로 성공 로그 확인 |
+| 0. 세팅 | **완료 (2026-11-16)** - MCP 연결, 앱 정보, 에셋 복사(그림 336·소리 20·폰트 TTF 5) + 임포트 자동 설정, 패키지 추가(Test Framework 1.6.0, Authentication 3.9.0, Cloud Save 3.4.2, Cloud Code 2.10.4, Leaderboards 2.3.5, Multiplayer 2.4.1, Netcode for GameObjects 2.14.0), Unity Cloud 프로젝트 "Defense Battle"(`8dad958b-a0aa-45ae-852d-40249312c36d`, 환경 `production`) 연결, 빈 씬 + `UgsLoginProbe` 로 익명 로그인 성공 로그 확인. UGS 대시보드 나머지(`docs/ugs-setup.md` 4번)는 사용자 작업으로 남음 |
 | 1. Core 이식 | **완료 (2026-10-19)** - 아래 검증 결과. Unity 에디터 Test Runner 에서도 EditMode 60개 통과 확인 (2026-11-16, 할당 측정 1개는 .NET 쪽에서만 재서 Ignore) |
 | 5. UGS 연동 | **서버 쪽 완료 (2026-10-19)** - Cloud Code 모듈 + 서버 테스트 33개. 클라이언트 연결(로그인·호출·푸시 구독)은 남음 |
 | 2 ~ 4, 6, 7 | 시작 전 (2단계부터는 에디터 작업 - PC 의 Claude Code + MCP) |
