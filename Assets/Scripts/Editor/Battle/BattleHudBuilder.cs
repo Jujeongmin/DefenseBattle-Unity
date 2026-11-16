@@ -250,7 +250,7 @@ public static class BattleHudBuilder
     }
 
     // ---------------- 부품 ----------------
-    static Button SideButton(RectTransform parent, string name, string icon, string label)
+    internal static Button SideButton(RectTransform parent, string name, string icon, string label)
     {
         Button b = Btn(parent, name, "btn_gold", 1.375f);
         Image i = Img(b.transform, "Icon", s_catalog.Icon(icon), Color.white);
@@ -260,7 +260,7 @@ public static class BattleHudBuilder
         return b;
     }
 
-    static Button IconButton(RectTransform parent, string name, string icon, out Image iconImage, out TextMeshProUGUI text)
+    internal static Button IconButton(RectTransform parent, string name, string icon, out Image iconImage, out TextMeshProUGUI text)
     {
         Button b = Btn(parent, name, "btn_blue", 1.7f);
         iconImage = null;
@@ -279,7 +279,7 @@ public static class BattleHudBuilder
         return b;
     }
 
-    static Button Btn(Transform parent, string name, string frame, float ppuMul)
+    internal static Button Btn(Transform parent, string name, string frame, float ppuMul)
     {
         Image img = Img(parent, name, FrameSprite(frame), Color.white, ppuMul, true);
         var b = img.gameObject.AddComponent<Button>();
@@ -289,7 +289,7 @@ public static class BattleHudBuilder
     }
 
     /// <summary>자주 바뀌는 묶음: 중첩 Canvas (부모 칸을 채움). 버튼이 있으면 자체 Raycaster</summary>
-    static RectTransform Nested(Transform parent, string name, bool raycast)
+    internal static RectTransform Nested(Transform parent, string name, bool raycast)
     {
         RectTransform rt = BattleSceneBuilder.Rt(parent, name);
         rt.Fill();
@@ -298,7 +298,7 @@ public static class BattleHudBuilder
         return rt;
     }
 
-    static Image Img(Transform parent, string name, Sprite sprite, Color color, float ppuMul = 1f, bool sliced = false)
+    internal static Image Img(Transform parent, string name, Sprite sprite, Color color, float ppuMul = 1f, bool sliced = false)
     {
         RectTransform rt = BattleSceneBuilder.Rt(parent, name);
         var img = rt.gameObject.AddComponent<Image>();
@@ -312,7 +312,7 @@ public static class BattleHudBuilder
         return img;
     }
 
-    static TextMeshProUGUI Txt(Transform parent, string name, float size, Color color, TextAlignmentOptions align, string text = "")
+    internal static TextMeshProUGUI Txt(Transform parent, string name, float size, Color color, TextAlignmentOptions align, string text = "")
     {
         RectTransform rt = BattleSceneBuilder.Rt(parent, name);
         var t = rt.gameObject.AddComponent<TextMeshProUGUI>();
@@ -329,7 +329,7 @@ public static class BattleHudBuilder
     }
 
     /// <summary>크림 종이 위 진한 글자 (테두리 없는 픽셀 폰트)</summary>
-    static TextMeshProUGUI InkTxt(Transform parent, string name, float size, TextAlignmentOptions align)
+    internal static TextMeshProUGUI InkTxt(Transform parent, string name, float size, TextAlignmentOptions align)
     {
         TextMeshProUGUI t = Txt(parent, name, size, Ink, align);
         t.font = s_inkFont;
@@ -337,9 +337,9 @@ public static class BattleHudBuilder
         return t;
     }
 
-    static Sprite FrameSprite(string name) => AssetDatabase.LoadAssetAtPath<Sprite>(Frame + name + ".png");
+    internal static Sprite FrameSprite(string name) => AssetDatabase.LoadAssetAtPath<Sprite>(Frame + name + ".png");
 
-    static string Loc(string key) => DefenseBattle.Core.Loc.Tl(key);
+    internal static string Loc(string key) => DefenseBattle.Core.Loc.Tl(key);
 
     static void Set(Object target, string field, Object value) => BattleSceneBuilder.Set(target, field, value);
 
@@ -357,9 +357,9 @@ public static class BattleHudBuilder
     }
 
     // ---------------- RectTransform 도우미 ----------------
-    static void Fill(this RectTransform rt, float inset = 0) => rt.Fill(inset, inset, inset, inset);
+    internal static void Fill(this RectTransform rt, float inset = 0) => rt.Fill(inset, inset, inset, inset);
 
-    static void Fill(this RectTransform rt, float left, float bottom, float right, float top)
+    internal static void Fill(this RectTransform rt, float left, float bottom, float right, float top)
     {
         rt.anchorMin = Vector2.zero;
         rt.anchorMax = Vector2.one;
@@ -368,7 +368,7 @@ public static class BattleHudBuilder
     }
 
     /// <summary>앵커 한 점 기준 위치·크기 (가운데 피벗)</summary>
-    static void Place(this RectTransform rt, Vector2 anchor, Vector2 pos, Vector2 size)
+    internal static void Place(this RectTransform rt, Vector2 anchor, Vector2 pos, Vector2 size)
     {
         rt.anchorMin = rt.anchorMax = anchor;
         rt.pivot = new Vector2(0.5f, 0.5f);

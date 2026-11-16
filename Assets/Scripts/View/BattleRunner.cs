@@ -30,6 +30,7 @@ namespace DefenseBattle.View
         [SerializeField] FloatingTextPool m_texts;
         /// <summary>흔들림 대상 (전장 루트)</summary>
         [SerializeField] Transform m_boardRoot;
+        [SerializeField] ZoneDragInput m_drag;
 
         readonly List<double> m_steps = new List<double>(8);
 
@@ -95,9 +96,11 @@ namespace DefenseBattle.View
             m_over.Begin();
             m_top.Begin();
             m_texts.BeginFrame();
-            m_board.Draw(Game, AnimTime, m_under);
+            ZoneDragLogic drag = m_drag != null ? m_drag.Logic : null;
+            m_board.Draw(Game, AnimTime, m_under, drag);
             m_actors.Draw(Game, AnimTime, m_under, m_mobOver, m_over);
             m_effects.Draw(Game, AnimTime, m_over, m_top);
+            m_board.DrawDrag(Game, m_over, drag); // 드래그 화살표는 맨 위
             m_texts.EndFrame();
             m_under.End();
             m_mobOver.End();

@@ -63,8 +63,8 @@ namespace DefenseBattle.View
         Button m_summonButton;
         CachedText m_waveText, m_goldText, m_progressText, m_bossText, m_costText, m_logText, m_mythicCached;
 
-        /// <summary>영웅 관리 열기 (직업, 합성 모드) - 직업이 없으면 null</summary>
-        public event Action<Job?, bool> HeroRequested;
+        /// <summary>영웅 관리 열기 (직업, 합성 모드) - 영웅 버튼은 둘 다 null (패널이 고른다)</summary>
+        public event Action<Job?, bool?> HeroRequested;
         /// <summary>나가기</summary>
         public event Action ExitRequested;
 
@@ -83,7 +83,7 @@ namespace DefenseBattle.View
             m_pauseButton.onClick.AddListener(OnPause);
             m_speedButton.onClick.AddListener(OnSpeed);
             m_muteButton.onClick.AddListener(OnMute);
-            m_heroButton.onClick.AddListener(() => HeroRequested?.Invoke(null, false));
+            m_heroButton.onClick.AddListener(() => HeroRequested?.Invoke(null, null));
             m_exitButton.onClick.AddListener(() => ExitRequested?.Invoke());
             m_summon.GoldShort += () => m_goldFlash = 0.15f;
             m_stacks.MergeRequested += job => HeroRequested?.Invoke(job, true);

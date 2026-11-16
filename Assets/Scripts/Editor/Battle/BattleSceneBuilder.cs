@@ -65,7 +65,7 @@ public static class BattleSceneBuilder
         new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
         // 자주 바뀌는 HUD 묶음은 Hud 안의 중첩 Canvas 로 분리한다 (BattleHudBuilder)
         RectTransform staticSafe = Canvas("Hud", 0, true);
-        Canvas("Overlay", 10, true);
+        RectTransform overlaySafe = Canvas("Overlay", 10, true);
         RectTransform boardArea = (RectTransform)staticSafe.Find("BoardArea");
 
         // 진행 루프
@@ -85,7 +85,8 @@ public static class BattleSceneBuilder
         Set(runner, "m_texts", texts);
         Set(runner, "m_boardRoot", board.transform);
 
-        BattleHudBuilder.Build(staticSafe, runner, catalog);
+        BattleHud hud = BattleHudBuilder.Build(staticSafe, runner, catalog);
+        BattleOverlayBuilder.Build(overlaySafe, staticSafe, runner, hud, catalog);
 
         EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), ScenePath);
         AddToBuildSettingsFirst(ScenePath);

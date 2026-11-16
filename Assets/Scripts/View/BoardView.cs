@@ -34,24 +34,98 @@ namespace DefenseBattle.View
             m_gapAt = -1;
         }
 
-        public void Draw(Game g, double t, ShapeBatch under)
+        public void Draw(Game g, double t, ShapeBatch under, ZoneDragLogic drag)
         {
-            DrawZones(g, under);
+            DrawZones(g, t, under, drag);
             DrawGaps(g, t, under);
             DrawBurns(g, t, under);
         }
 
-        void DrawZones(Game g, ShapeBatch b)
+        /// <summary>구역 (render.ts drawZones): 드래그 중이면 출발 구역 밝게·대상 금색·나머지 어둡게, 둘은 움직이는 점선</summary>
+        void DrawZones(Game g, double t, ShapeBatch b, ZoneDragLogic drag)
         {
+            bool dragging = drag != null && drag.Active;
             Color32 edge = Rgba.Of(20, 20, 20, 0.18);
-            foreach (Zone z in g.Zones)
+            for (int i = 0; i < g.Zones.Length; i++)
             {
-                Color32 fill = z.Job.HasValue ? Rgba.Hex(Units.Get(z.Job.Value).Tint, 0.10) : Rgba.Of(255, 255, 255, 0.02);
+                Zone z = g.Zones[i];
+                bool isFrom = dragging && drag.From == i, isTo = dragging && drag.To == i;
+                Color32 fill = isFrom ? Rgba.Of(255, 255, 255, 0.16)
+                    : isTo ? Rgba.Of(255, 207, 63, 0.22)
+                    : dragging ? Rgba.Of(0, 0, 0, 0.10)
+                    : z.Job.HasValue ? Rgba.Hex(Units.Get(z.Job.Value).Tint, 0.10) : Rgba.Of(255, 255, 255, 0.02);
                 Vector2 a = P(z.Tri[0]), c1 = P(z.Tri[1]), c2 = P(z.Tri[2]);
                 b.FillTriangle(a, c1, c2, fill);
-                b.Line(a.x, a.y, c1.x, c1.y, 2, edge);
-                b.Line(c1.x, c1.y, c2.x, c2.y, 2, edge);
-                b.Line(c2.x, c2.y, a.x, a.y, 2, edge);
+                if (isFrom || isTo)
+                {
+                    Color32 dash = isTo ? Rgba.Hex(0xffcf3f) : Rgba.Of(255, 255, 255, 0.85);
+                    float offset = (float)(t * 40); // 개미행렬 점선 (lineDashOffset = -t*40)
+                    offset = DashedLine(b, a, c1, offset, dash);
+                    offset = DashedLine(b, c1, c2, offset, dash);
+                    DashedLine(b, c2, a, offset, dash);
+                }
+                else
+                {
+                    b.Line(a.x, a.y, c1.x, c1.y, 2, edge);
+                    b.Line(c1.x, c1.y, c2.x, c2.y, 2, edge);
+                    b.Line(c2.x, c2.y, a.x, a.y, 2, edge);
+                }
+            }
+        }
+
+        /// <summary>점선 [10, 6] 굵기 4. phase 는 무늬 시작 위치(px) - 이어지는 다음 변에 넘긴다</summary>
+        static float DashedLine(ShapeBatch b, Vector2 from, Vector2 to, float phase, Color32 c)
+        {
+            const float Dash = 10, Gap = 6, Period = Dash + Gap;
+            Vector2 d = to - from;
+            float len = d.magnitude;
+            if (len < 1e-3f) return phase;
+            Vector2 u = d / len;
+            float s = phase % Period - Period; // phase 가 커질수록 무늬가 선 방향으로 흐른다
+            for (; s < len; s += Period)
+            {
+                float a0 = Mathf.Max(0, s), a1 = Mathf.Min(len, s + Dash);
+                if (a1 <= a0) continue;
+                b.Line(from.x + u.x * a0, from.y + u.y * a0, from.x + u.x * a1, from.y + u.y * a1, 4, c);
+            }
+            return phase + len;
+        }
+
+        /// <summary>드래그 화살표 (출발 구역 중심 → 손가락) + 대상 구역 위 교환 표시 (render.ts drawDrag / drawSwapMark)</summary>
+        public void DrawDrag(Game g, ShapeBatch b, ZoneDragLogic drag)
+        {
+            if (drag == null || !drag.Active) return;
+            Zone from = g.Zones[drag.From];
+            float cx = (float)from.Cx, cy = (float)from.Cy;
+            float dx = drag.X - cx, dy = drag.Y - cy;
+            float len = Mathf.Sqrt(dx * dx + dy * dy);
+            if (len < 24) return; // 너무 짧으면 생략
+            float ux = dx / len, uy = dy / len;
+            Color32 white = Rgba.Of(255, 255, 255, 0.9);
+            b.Line(cx, cy, drag.X - ux * 16, drag.Y - uy * 16, 5, white);
+            b.FillTriangle(new Vector2(drag.X, drag.Y),
+                new Vector2(drag.X - ux * 18 - uy * 9, drag.Y - uy * 18 + ux * 9),
+                new Vector2(drag.X - ux * 18 + uy * 9, drag.Y - uy * 18 - ux * 9), white);
+            if (drag.To >= 0)
+            {
+                Zone to = g.Zones[drag.To];
+                DrawSwapMark(b, (float)to.Cx, (float)to.Cy);
+            }
+        }
+
+        /// <summary>엇갈린 두 화살표 (흰 면 + 검은 테두리)</summary>
+        static void DrawSwapMark(ShapeBatch b, float x, float y)
+        {
+            Color32 edge = Rgba.Of(0, 0, 0, 0.6), face = Rgba.Hex(0xffffff);
+            for (int k = 0; k < 2; k++)
+            {
+                int dir = k == 0 ? 1 : -1;
+                float yy = y + dir * 8;
+                // 테두리 (4px) 먼저 크게, 그 위에 흰 면
+                b.Line(x - dir * 18, yy, x + dir * 8, yy, 10, edge);
+                b.FillTriangle(new Vector2(x + dir * 6, yy - 12), new Vector2(x + dir * 21, yy), new Vector2(x + dir * 6, yy + 12), edge);
+                b.Line(x - dir * 16, yy, x + dir * 8, yy, 6, face);
+                b.FillTriangle(new Vector2(x + dir * 8, yy - 9), new Vector2(x + dir * 18, yy), new Vector2(x + dir * 8, yy + 9), face);
             }
         }
 
