@@ -29,6 +29,8 @@ public class DefenseBattleArtImporter : AssetPostprocessor
         if (fileName.StartsWith("ribbon_")) return new Vector4(128, 8, 128, 20);
         if (fileName == "wood") return new Vector4(96, 96, 96, 96);
         if (fileName == "wood_tight") return new Vector4(52, 71, 52, 53);
+        // 하단 조작부 테두리 (style.css #controls border-image 53 52 71 52 = 위 오른 아래 왼)
+        if (fileName == "wood_frame") return new Vector4(52, 71, 52, 53);
         return Vector4.zero;
     }
 

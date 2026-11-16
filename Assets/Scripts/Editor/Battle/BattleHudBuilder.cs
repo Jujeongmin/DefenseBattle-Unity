@@ -44,30 +44,55 @@ public static class BattleHudBuilder
     static void BuildTopBar(BattleHud hud, RectTransform bar)
     {
         Img(bar, "Bg", FrameSprite("wood"), Color.white, 2.67f, true).rectTransform.Fill();
-        RectTransform dyn = Nested(bar, "Dynamic", false);
 
-        Image portraitBg = Img(bar, "PortraitBg", null, new Color32(42, 29, 22, 140));
-        portraitBg.rectTransform.Place(new Vector2(0, 0.5f), new Vector2(28 + 38, 0), new Vector2(76, 76));
+        // #topbar: 왼쪽(flex 1) · 가운데(웨이브) · 오른쪽(flex 1) - 폭이 좁아지면 양쪽이 줄고 웨이브 글자는 칸에 맞춰 작아진다
+        RectTransform content = BattleSceneBuilder.Rt(bar, "Content");
+        content.Fill(20, 12, 20, 10);
+        var row = content.gameObject.AddComponent<HorizontalLayoutGroup>();
+        row.spacing = 8;
+        row.childAlignment = TextAnchor.MiddleCenter;
+        row.childControlWidth = row.childControlHeight = true;
+        row.childForceExpandWidth = false;
+        row.childForceExpandHeight = true;
+
+        RectTransform left = BattleSceneBuilder.Rt(content, "Left");
+        Layout(left.gameObject, minWidth: 150, preferredWidth: 220, flexibleWidth: 1);
+        Image portraitBg = Img(left, "PortraitBg", null, new Color32(42, 29, 22, 140));
+        portraitBg.rectTransform.Place(new Vector2(0, 0.5f), new Vector2(38, 0), new Vector2(76, 76));
         Image portrait = Img(portraitBg.transform, "Portrait", null, Color.white);
         portrait.rectTransform.Fill(4);
         portrait.preserveAspect = true;
-        // 글자 칸 왼쪽 끝 = 초상화 오른쪽 + 10
-        TextMeshProUGUI race = Txt(dyn, "Race", 26, Cream, TextAlignmentOptions.Left);
-        race.rectTransform.Place(new Vector2(0, 0.5f), new Vector2(114 + 70, 14), new Vector2(140, 34));
-        TextMeshProUGUI stage = Txt(dyn, "Stage", 22, Cream2, TextAlignmentOptions.Left);
-        stage.rectTransform.Place(new Vector2(0, 0.5f), new Vector2(114 + 70, -18), new Vector2(140, 30));
+        RectTransform leftDyn = Nested(left, "Dynamic", false);
+        leftDyn.Fill(86, 0, 0, 0); // 초상화 오른쪽부터
+        TextMeshProUGUI race = Txt(leftDyn, "Race", 26, Cream, TextAlignmentOptions.BottomLeft);
+        race.rectTransform.Fill(0, 40, 0, 0);
+        race.enableAutoSizing = true;
+        race.fontSizeMin = 16;
+        race.fontSizeMax = 26;
+        TextMeshProUGUI stage = Txt(leftDyn, "Stage", 22, Cream2, TextAlignmentOptions.TopLeft);
+        stage.rectTransform.Fill(0, 0, 0, 44);
 
-        TextMeshProUGUI wave = Txt(dyn, "Wave", 34, Cream, TextAlignmentOptions.Center);
-        wave.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0, 12), new Vector2(220, 42));
-        TextMeshProUGUI boss = Txt(dyn, "BossTimer", 26, new Color32(0xff, 0x7b, 0x7b, 255), TextAlignmentOptions.Center);
-        boss.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0, -22), new Vector2(220, 32));
+        RectTransform center = Nested(content, "Center", false);
+        Layout(center.gameObject, minWidth: 120, preferredWidth: 200);
+        TextMeshProUGUI wave = Txt(center, "Wave", 34, Cream, TextAlignmentOptions.Center);
+        wave.rectTransform.Fill(0, 30, 0, 0);
+        wave.enableAutoSizing = true;
+        wave.fontSizeMin = 18;
+        wave.fontSizeMax = 34;
+        TextMeshProUGUI boss = Txt(center, "BossTimer", 26, new Color32(0xff, 0x7b, 0x7b, 255), TextAlignmentOptions.Top);
+        boss.rectTransform.Fill(0, 0, 0, 52);
 
-        Button speed = IconButton(bar, "Speed", null, out Image _, out TextMeshProUGUI speedText);
-        speed.GetComponent<RectTransform>().Place(new Vector2(1, 0.5f), new Vector2(-24 - 38, 0), new Vector2(76, 76));
-        Button pause = IconButton(bar, "Pause", "pause", out Image pauseIcon, out _);
-        pause.GetComponent<RectTransform>().Place(new Vector2(1, 0.5f), new Vector2(-24 - 38 - 84, 0), new Vector2(76, 76));
-        Button mute = IconButton(bar, "Mute", "sound", out Image muteIcon, out _);
-        mute.GetComponent<RectTransform>().Place(new Vector2(1, 0.5f), new Vector2(-24 - 38 - 168, 0), new Vector2(76, 76));
+        RectTransform right = BattleSceneBuilder.Rt(content, "Right");
+        Layout(right.gameObject, minWidth: 3 * 72 + 2 * 6, preferredWidth: 220, flexibleWidth: 1);
+        var buttons = right.gameObject.AddComponent<HorizontalLayoutGroup>();
+        buttons.spacing = 6;
+        buttons.childAlignment = TextAnchor.MiddleRight;
+        buttons.childControlWidth = buttons.childControlHeight = true;
+        buttons.childForceExpandWidth = buttons.childForceExpandHeight = false;
+        Button mute = IconButton(right, "Mute", "sound", out Image muteIcon, out _);
+        Button pause = IconButton(right, "Pause", "pause", out Image pauseIcon, out _);
+        Button speed = IconButton(right, "Speed", null, out Image _, out TextMeshProUGUI speedText);
+        foreach (Button b in new[] { mute, pause, speed }) Layout(b.gameObject, preferredWidth: 72, preferredHeight: 72);
 
         Set(hud, "m_portrait", portrait);
         Set(hud, "m_race", race);
@@ -141,46 +166,67 @@ public static class BattleHudBuilder
     // ---------------- 하단 조작부 ----------------
     static void BuildControls(BattleHud hud, RectTransform controls)
     {
-        Img(controls, "Plank", AssetDatabase.LoadAssetAtPath<Sprite>(Frame + "wood_plank.png"), new Color32(0x7a, 0x4a, 0x32, 255)).rectTransform.Fill();
-        Img(controls, "Frame", FrameSprite("wood_frame"), Color.white, 2.9f, true).rectTransform.Fill();
+        // 판자 한 장을 크게 늘린 바탕 + 얇은 나무 테두리 (border-image 8px 10px 0 10px - 아래 테두리 없음: 화면 밖으로 내린다)
+        Img(controls, "Plank", AssetDatabase.LoadAssetAtPath<Sprite>(Frame + "wood_plank.png"), Color.white).rectTransform.Fill();
+        const float FrameMul = 3.2f; // 52px 조각 → 약 16 단위
+        Img(controls, "Frame", FrameSprite("wood_frame"), Color.white, FrameMul, true).rectTransform.Fill(0, -71 / FrameMul, 0, 0);
 
-        // 1줄: 영웅 · 소환 · 나가기
         Button hero = SideButton(controls, "Hero", "helmet", Loc("영웅"));
-        hero.GetComponent<RectTransform>().Place(new Vector2(0, 1), new Vector2(24 + 64, -24 - 62), new Vector2(128, 124));
         Image dot = Img(hero.transform, "MergeDot", null, new Color32(0xe5, 0x48, 0x4d, 255));
-        dot.rectTransform.Place(new Vector2(1, 1), new Vector2(0, 0), new Vector2(22, 22));
+        dot.rectTransform.Place(new Vector2(1, 1), new Vector2(-6, -6), new Vector2(20, 20));
         dot.gameObject.SetActive(false);
         Button exit = SideButton(controls, "Exit", "home", Loc("나가기"));
-        exit.GetComponent<RectTransform>().Place(new Vector2(1, 1), new Vector2(-24 - 64, -24 - 62), new Vector2(128, 124));
 
         Button summon = Btn(controls, "Summon", "btn_red", 1.0f);
-        var summonRt = summon.GetComponent<RectTransform>();
-        summonRt.anchorMin = new Vector2(0, 1);
-        summonRt.anchorMax = new Vector2(1, 1);
-        summonRt.pivot = new Vector2(0.5f, 1);
-        summonRt.offsetMin = new Vector2(168, -24 - 136);
-        summonRt.offsetMax = new Vector2(-168, -24);
         var summonGroup = summon.gameObject.AddComponent<CanvasGroup>();
         var summonInput = summon.gameObject.AddComponent<SummonButton>();
         TextMeshProUGUI title = Txt(summon.transform, "Title", 40, Cream, TextAlignmentOptions.Center, Loc("소환"));
-        title.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0, 16), new Vector2(300, 48));
+        title.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0, 14), new Vector2(300, 48));
         RectTransform costDyn = Nested(summon.transform, "Dynamic", false);
         TextMeshProUGUI cost = Txt(costDyn, "Cost", 26, Cream, TextAlignmentOptions.Center);
         cost.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0, -24), new Vector2(300, 34));
 
-        // 2줄: 덱 카드 4장
-        RectTransform stacksRt = Nested(controls, "Stacks", true);
-        stacksRt.anchorMin = new Vector2(0, 0);
-        stacksRt.anchorMax = new Vector2(1, 0);
-        stacksRt.pivot = new Vector2(0.5f, 0);
-        stacksRt.sizeDelta = new Vector2(0, 200);
-        stacksRt.anchoredPosition = new Vector2(0, 20);
+        // 폭이 달라져도 맞게 레이아웃 그룹으로 배치 (#controls: 세로 묶음, .control-buttons / #unit-stacks: 가로)
+        RectTransform content = BattleSceneBuilder.Rt(controls, "Content");
+        content.Fill();
+        var col = content.gameObject.AddComponent<VerticalLayoutGroup>();
+        col.padding = new RectOffset(22, 22, 22, 16);
+        col.spacing = 12;
+        col.childControlWidth = col.childControlHeight = true;
+        col.childForceExpandWidth = true;
+        col.childForceExpandHeight = false;
+
+        // 1줄: 영웅 · 소환(남는 폭) · 나가기
+        RectTransform row = BattleSceneBuilder.Rt(content, "ButtonRow");
+        Layout(row.gameObject, preferredHeight: 112);
+        var rowGroup = row.gameObject.AddComponent<HorizontalLayoutGroup>();
+        rowGroup.spacing = 14;
+        rowGroup.childControlWidth = rowGroup.childControlHeight = true;
+        rowGroup.childForceExpandWidth = false;
+        rowGroup.childForceExpandHeight = true;
+        hero.transform.SetParent(row, false);
+        summon.transform.SetParent(row, false);
+        exit.transform.SetParent(row, false);
+        Layout(hero.gameObject, preferredWidth: 104);
+        Layout(summon.gameObject, flexibleWidth: 1);
+        Layout(exit.gameObject, preferredWidth: 104);
+
+        // 2줄: 덱 카드 (한 장 최대 200 - .stack max-width 100px, 모자라면 같이 줄어든다, 가운데 정렬)
+        RectTransform stacksRt = Nested(content, "Stacks", true);
+        Layout(stacksRt.gameObject, flexibleHeight: 1, minHeight: 160);
+        var cardsGroup = stacksRt.gameObject.AddComponent<HorizontalLayoutGroup>();
+        cardsGroup.spacing = 12;
+        cardsGroup.childAlignment = TextAnchor.MiddleCenter;
+        cardsGroup.childControlWidth = cardsGroup.childControlHeight = true;
+        cardsGroup.childForceExpandWidth = false;
+        cardsGroup.childForceExpandHeight = true;
+        cardsGroup.padding = new RectOffset(0, 0, 14, 0); // 카드 위로 튀어나오는 수량·합성 표 자리
         var stacks = stacksRt.gameObject.AddComponent<UnitStacksView>();
         var cards = new StackCard[4];
         for (int i = 0; i < 4; i++)
         {
             cards[i] = Card(stacksRt, i);
-            cards[i].GetComponent<RectTransform>().Place(new Vector2(0.5f, 0.5f), new Vector2((i - 1.5f) * 172, 0), new Vector2(160, 192));
+            Layout(cards[i].gameObject, minWidth: 110, preferredWidth: 200);
         }
         var so = new SerializedObject(stacks);
         SerializedProperty arr = so.FindProperty("m_cards");
@@ -211,24 +257,38 @@ public static class BattleHudBuilder
         face.rectTransform.Fill(6);
         face.raycastTarget = false;
 
+        // 카드 폭이 화면에 따라 달라지므로 가로는 늘어나는 앵커, 세로는 위·아래 기준
         card.Arrow = Img(root, "Arrow", null, Color.white);
-        card.Arrow.rectTransform.Place(new Vector2(0, 1), new Vector2(26, -26), new Vector2(28, 28));
+        card.Arrow.rectTransform.Place(new Vector2(0, 1), new Vector2(22, -22), new Vector2(24, 24));
         card.Arrow.raycastTarget = false;
         card.Icon = Img(root, "Icon", null, Color.white);
-        card.Icon.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0, -56), new Vector2(84, 84));
+        card.Icon.rectTransform.anchorMin = new Vector2(0, 1);
+        card.Icon.rectTransform.anchorMax = new Vector2(1, 1);
+        card.Icon.rectTransform.pivot = new Vector2(0.5f, 1);
+        card.Icon.rectTransform.offsetMin = new Vector2(10, -82);
+        card.Icon.rectTransform.offsetMax = new Vector2(-10, -10);
         card.Icon.preserveAspect = true;
         card.Icon.raycastTarget = false;
         card.Name = InkTxt(root, "Name", 22, TextAlignmentOptions.Center);
-        card.Name.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0, -114), new Vector2(150, 28));
+        card.Name.rectTransform.anchorMin = new Vector2(0, 0);
+        card.Name.rectTransform.anchorMax = new Vector2(1, 0);
+        card.Name.rectTransform.pivot = new Vector2(0.5f, 0);
+        card.Name.rectTransform.offsetMin = new Vector2(8, 56);
+        card.Name.rectTransform.offsetMax = new Vector2(-8, 82);
         card.Name.enableAutoSizing = true;
-        card.Name.fontSizeMin = 14;
+        card.Name.fontSizeMin = 12;
         card.Name.fontSizeMax = 22;
 
         card.UpButton = Btn(root, "Up", "btn_green", 2f);
         var spriteState = card.UpButton.spriteState;
         spriteState.disabledSprite = FrameSprite("btn_gray");
         card.UpButton.spriteState = spriteState;
-        card.UpButton.GetComponent<RectTransform>().Place(new Vector2(0.5f, 0), new Vector2(0, 34), new Vector2(148, 56));
+        var upRt = card.UpButton.GetComponent<RectTransform>();
+        upRt.anchorMin = new Vector2(0, 0);
+        upRt.anchorMax = new Vector2(1, 0);
+        upRt.pivot = new Vector2(0.5f, 0);
+        upRt.offsetMin = new Vector2(10, 10);
+        upRt.offsetMax = new Vector2(-10, 54);
         card.UpText = Txt(card.UpButton.transform, "Text", 22, Cream, TextAlignmentOptions.Center);
         card.UpText.rectTransform.Fill(8, 8, 8, 12);
         card.UpText.enableAutoSizing = true;
@@ -249,14 +309,31 @@ public static class BattleHudBuilder
         return card;
     }
 
+    /// <summary>레이아웃 그룹 안 크기 (지정 안 한 값은 -1 = 쓰지 않음)</summary>
+    static void Layout(GameObject go, float minWidth = -1, float preferredWidth = -1, float flexibleWidth = -1,
+        float minHeight = -1, float preferredHeight = -1, float flexibleHeight = -1)
+    {
+        var le = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
+        le.minWidth = minWidth;
+        le.preferredWidth = preferredWidth;
+        le.flexibleWidth = flexibleWidth;
+        le.minHeight = minHeight;
+        le.preferredHeight = preferredHeight;
+        le.flexibleHeight = flexibleHeight;
+    }
+
     // ---------------- 부품 ----------------
     internal static Button SideButton(RectTransform parent, string name, string icon, string label)
     {
         Button b = Btn(parent, name, "btn_gold", 1.375f);
         Image i = Img(b.transform, "Icon", s_catalog.Icon(icon), Color.white);
-        i.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0, 16), new Vector2(48, 48));
+        i.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0, 16), new Vector2(44, 44));
         i.raycastTarget = false;
-        Txt(b.transform, "Label", 26, Cream, TextAlignmentOptions.Center, label).rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0, -28), new Vector2(124, 32));
+        TextMeshProUGUI t = Txt(b.transform, "Label", 24, Cream, TextAlignmentOptions.Center, label);
+        t.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0, -26), new Vector2(96, 30));
+        t.enableAutoSizing = true;
+        t.fontSizeMin = 14;
+        t.fontSizeMax = 24;
         return b;
     }
 

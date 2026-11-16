@@ -59,9 +59,6 @@ namespace DefenseBattle.View
             }
         }
 
-        /// <summary>카드 간격 (style.css .stack 폭 + gap × 2)</summary>
-        const float Pitch = 172;
-
         void Rebuild(Game g, long mergeMask)
         {
             m_dirty = false;
@@ -71,10 +68,7 @@ namespace DefenseBattle.View
                 StackCard card = m_cards[i];
                 bool used = i < shown;
                 if (card.gameObject.activeSelf != used) card.gameObject.SetActive(used);
-                if (!used) continue;
-                // 덱 수에 맞춰 가운데 정렬 (#unit-stacks justify-content: center)
-                var rt = (RectTransform)card.transform;
-                rt.anchoredPosition = new Vector2((i - (shown - 1) / 2f) * Pitch, rt.anchoredPosition.y);
+                if (!used) continue; // 배치는 HorizontalLayoutGroup (가운데 정렬, 폭에 맞춰 줄어듦)
                 Job job = g.Opts.Deck[i];
                 int count = 0, top = 0;
                 foreach (Unit u in g.Units)
