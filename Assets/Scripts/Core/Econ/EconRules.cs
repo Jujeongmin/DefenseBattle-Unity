@@ -205,21 +205,17 @@ namespace DefenseBattle.Core
             return OpenChestNow(e, c.Kind, ctx);
         }
 
-        /// <summary>유닛 뽑기: 보석으로, 또는 ticket=true 면 뽑기권 n장으로 (10회도 영웅+ 보장 그대로)</summary>
+        /// <summary>
+        /// 유닛 뽑기 (10회는 영웅+ 보장). 뽑기권을 먼저 쓰고 모자란 만큼 보석 (econ/rules.ts gacha·gachaCost).
+        /// 둘 다 확인한 뒤 한 번에 뺀다 - 한쪽만 빠지지 않게. ticket 인자는 예전 클라이언트 호환용으로만 남김 (무시)
+        /// </summary>
         public static Reveal Gacha(EconState e, int n, EconContext ctx, bool ticket = false)
         {
             n = n == 10 ? 10 : 1;
-            if (ticket)
-            {
-                if (e.Item(ItemKey.GachaTicket) < n) return null;
-                e.Items[ItemKey.GachaTicket] = e.Item(ItemKey.GachaTicket) - n;
-            }
-            else
-            {
-                int cost = n == 1 ? Chests.GachaOne : Chests.GachaTen;
-                if (e.Crystals < cost) return null;
-                e.Crystals -= cost;
-            }
+            (int useTickets, int gems) = ShopRules.GachaCost(e.Item(ItemKey.GachaTicket), n);
+            if (e.Crystals < gems) return null;
+            e.Items[ItemKey.GachaTicket] = e.Item(ItemKey.GachaTicket) - useTickets;
+            e.Crystals -= gems;
             var rolls = new Rarity[n];
             for (int i = 0; i < n; i++) rolls[i] = RollGachaRarity(ctx.Rng);
             if (n == 10 && Array.TrueForAll(rolls, r => r != Rarity.Epic && r != Rarity.Legendary)) rolls[n - 1] = Rarity.Epic;

@@ -56,6 +56,19 @@ namespace DefenseBattle.Server.Tests
         }
 
         [Test]
+        public async Task Gacha_MixesTicketAndCrystals()
+        {
+            var rig = new Rig();
+            await rig.Server.AdReward("p1", false); // 뽑기권 1
+            await rig.Server.RedeemPurchase("p1", "crystal_1200", "ok:M1", "sig", 11000, "KRW");
+            int before = (await rig.Server.EconSync("p1")).Econ.Crystals;
+            EconReply<Reveal> g = await rig.Server.Gacha("p1", 10, false);
+            Assert.IsNotNull(g.Result);
+            Assert.AreEqual(0, g.Econ.Item(ItemKey.GachaTicket));
+            Assert.AreEqual(before - 9 * 90, g.Econ.Crystals, "뽑기권 1 + 보석 9회분");
+        }
+
+        [Test]
         public async Task Purchase_GrantedOncePerOrder_RecoversAfterFailure()
         {
             var rig = new Rig();

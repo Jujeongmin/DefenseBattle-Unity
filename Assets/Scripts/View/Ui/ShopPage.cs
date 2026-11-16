@@ -8,7 +8,7 @@ using UnityEngine.UI;
 namespace DefenseBattle.View
 {
     /// <summary>
-    /// 상점 (menu.ts openShop): 보석·보유 아이템, 유닛 뽑기(1회·10회, 뽑기권 우선), 확률 정보.
+    /// 상점 (menu.ts openShop): 보석·보유 아이템, 유닛 뽑기(1회·10회, 뽑기권 먼저 + 모자란 만큼 보석), 확률 정보.
     /// 상품(보석·패키지·상자 구매)은 8단계(상점·특가)에서 이 창에 붙는다.
     /// </summary>
     public sealed class ShopPage
@@ -78,8 +78,9 @@ namespace DefenseBattle.View
 
         void GachaButton(Transform row, int n, string frame, int tix)
         {
-            (bool ticket, int gems) = ShopRules.GachaPlan(tix, n);
-            string cost = ticket ? Loc.Icon("ticket") + n : Loc.Icon("gem") + gems;
+            // 가진 뽑기권을 먼저 쓰고 모자란 만큼 보석 (예: 뽑기권 3 + 보석 630)
+            (int useTix, int gems) = ShopRules.GachaCost(tix, n);
+            string cost = (useTix > 0 ? Loc.Icon("ticket") + useTix : "") + (useTix > 0 && gems > 0 ? " + " : "") + (gems > 0 ? Loc.Icon("gem") + gems : "");
             Button b = Ui.Button(row, frame, null, 0, () => Gacha(n));
             Ui.Size(b.gameObject, -1, 130, 1);
             Ui.Column(b.transform, 0, 8, 8, 10, 18, TextAnchor.MiddleCenter);
@@ -92,11 +93,11 @@ namespace DefenseBattle.View
         {
             if (m_busy) return;
             EconState e = EconCache.State;
-            (bool ticket, int gems) = ShopRules.GachaPlan(e.Item(ItemKey.GachaTicket), n);
-            if (!ticket && e.Crystals < gems) { m_toast.Show(Loc.Tl("보석이 부족해요")); return; }
+            (int useTix, int gems) = ShopRules.GachaCost(e.Item(ItemKey.GachaTicket), n);
+            if (e.Crystals < gems) { m_toast.Show(Loc.Tl("보석이 부족해요")); return; }
             m_busy = true;
             Reveal r = null;
-            try { r = await CloudClient.Econ<Reveal>(CloudApi.Gacha, CloudClient.Args("count", n, "ticket", ticket)); }
+            try { r = await CloudClient.Econ<Reveal>(CloudApi.Gacha, CloudClient.Args("count", n, "ticket", useTix > 0)); }
             catch (Exception ex)
             {
                 Debug.LogWarning("[Shop] Gacha 실패: " + ex.Message);

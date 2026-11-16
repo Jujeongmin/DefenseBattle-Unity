@@ -110,7 +110,32 @@ namespace DefenseBattle.Core.Tests
                 Assert.IsTrue(epic, "seed " + seed);
             }
             EconState t = Fresh();
-            Assert.IsNull(EconRules.Gacha(t, 1, Ctx(), ticket: true)); // 뽑기권 없음
+            Assert.IsNull(EconRules.Gacha(t, 1, Ctx(), ticket: true)); // 뽑기권·보석 없음
+        }
+
+        [Test]
+        public void Gacha_TicketsFirstThenGems()
+        {
+            // econ/rules.ts gachaCost: 가진 뽑기권을 먼저 쓰고 모자란 만큼 보석 (10회는 1회당 90)
+            EconState e = Fresh();
+            e.Items[ItemKey.GachaTicket] = 3;
+            e.Crystals = 7 * 90;
+            Assert.IsNotNull(EconRules.Gacha(e, 10, Ctx()));
+            Assert.AreEqual(0, e.Item(ItemKey.GachaTicket));
+            Assert.AreEqual(0, e.Crystals);
+
+            EconState one = Fresh();
+            one.Items[ItemKey.GachaTicket] = 1;
+            one.Crystals = 100;
+            Assert.IsNotNull(EconRules.Gacha(one, 1, Ctx()));
+            Assert.AreEqual(0, one.Item(ItemKey.GachaTicket), "뽑기권이 있으면 보석보다 먼저");
+            Assert.AreEqual(100, one.Crystals);
+
+            EconState shortOf = Fresh();
+            shortOf.Items[ItemKey.GachaTicket] = 3;
+            shortOf.Crystals = 7 * 90 - 1;
+            Assert.IsNull(EconRules.Gacha(shortOf, 10, Ctx()), "모자라면 아무것도 빼지 않는다");
+            Assert.AreEqual(3, shortOf.Item(ItemKey.GachaTicket));
         }
 
         [Test]

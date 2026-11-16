@@ -5,14 +5,13 @@ namespace DefenseBattle.Core
     /// <summary>상점 표시 규칙: 뽑기 비용, 확률 정보 표 (menu.ts openOdds - econ 규칙과 같은 수)</summary>
     public static class ShopRules
     {
-        /// <summary>
-        /// 뽑기 결제 방법: 뽑기권이 n장 이상이면 뽑기권, 아니면 보석 (서버 Gacha(count, ticket) 는 둘을 섞지 않는다).
-        /// </summary>
-        public static (bool Ticket, int Gems) GachaPlan(int tickets, int n)
+        /// <summary>뽑기 비용 (econ/rules.ts gachaCost): 가진 뽑기권을 먼저 쓰고, 모자란 횟수만큼 보석 (10회는 1회당 GachaTen/10)</summary>
+        public static (int Tickets, int Gems) GachaCost(int tickets, int n)
         {
             n = n == 10 ? 10 : 1;
-            if (tickets >= n) return (true, 0);
-            return (false, n == 1 ? Chests.GachaOne : Chests.GachaTen);
+            int use = Math.Min(n, Math.Max(0, tickets));
+            double per = n == 1 ? Chests.GachaOne : Chests.GachaTen / 10.0;
+            return (use, JsMath.RoundInt((n - use) * per));
         }
 
         public static int PoolSize(Rarity r)

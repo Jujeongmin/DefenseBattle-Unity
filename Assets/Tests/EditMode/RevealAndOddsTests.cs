@@ -23,12 +23,12 @@ namespace DefenseBattle.Core.Tests
         }
 
         [Test]
-        public void GachaPlan_TicketsFirstElseGems()
+        public void GachaCost_TicketsFirstThenGems()
         {
-            Assert.AreEqual((true, 0), ShopRules.GachaPlan(10, 10), "뽑기권이 충분하면 뽑기권");
-            Assert.AreEqual((false, Chests.GachaTen), ShopRules.GachaPlan(3, 10), "모자라면 보석 (서버는 섞어 쓰지 않는다)");
-            Assert.AreEqual((true, 0), ShopRules.GachaPlan(1, 1));
-            Assert.AreEqual((false, Chests.GachaOne), ShopRules.GachaPlan(0, 1));
+            Assert.AreEqual((10, 0), ShopRules.GachaCost(10, 10));
+            Assert.AreEqual((3, 630), ShopRules.GachaCost(3, 10), "모자란 7회 × 90");
+            Assert.AreEqual((1, 0), ShopRules.GachaCost(5, 1));
+            Assert.AreEqual((0, 100), ShopRules.GachaCost(0, 1));
         }
 
         [Test]
