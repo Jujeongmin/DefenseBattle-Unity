@@ -39,6 +39,28 @@ namespace DefenseBattle.View.Tests
             }
         }
 
+        [Test]
+        public void Lobby_BehindResultAndToast_WiredToFlow()
+        {
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Additive);
+            try
+            {
+                Transform lobby = Find(scene, "Overlay/LobbyHost");
+                Transform safe = Find(scene, "Overlay/SafeArea");
+                Assert.IsNotNull(lobby);
+                Assert.Less(lobby.GetSiblingIndex(), safe.GetSiblingIndex(), "결과 창·토스트가 로비 위에 뜬다");
+                var flow = Object.FindAnyObjectByType<BattleFlow>();
+                Assert.AreEqual(lobby.GetComponent<Lobby>(), new SerializedObject(flow).FindProperty("m_lobby").objectReferenceValue);
+                var so = new SerializedObject(lobby.GetComponent<Lobby>());
+                foreach (string f in new[] { "m_catalog", "m_root", "m_content", "m_popups", "m_toast", "m_audio" })
+                    Assert.IsNotNull(so.FindProperty(f).objectReferenceValue, f);
+            }
+            finally
+            {
+                EditorSceneManager.CloseScene(scene, true);
+            }
+        }
+
         static Transform Find(Scene scene, string path)
         {
             int slash = path.IndexOf('/');

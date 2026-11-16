@@ -4,7 +4,7 @@ using UnityEngine;
 namespace DefenseBattle.View
 {
     /// <summary>
-    /// 판 흐름 (main.ts launch / onGameOver / finishSolo / exitGame): 시작 화면 → 판 → 결과(부활) → 다시 하기 / 로비.
+    /// 판 흐름 (main.ts launch / onGameOver / finishSolo / exitGame): 접속 → 로비 → 판 → 결과(부활) → 다시 하기 / 로비.
     /// 결과·확인 창이 열려 있으면 구역 드래그를 막는다.
     /// </summary>
     public sealed class BattleFlow : MonoBehaviour
@@ -12,7 +12,7 @@ namespace DefenseBattle.View
         [SerializeField] BattleRunner m_runner;
         [SerializeField] BattleHud m_hud;
         [SerializeField] ResultPanel m_result;
-        [SerializeField] LaunchPanel m_launch;
+        [SerializeField] Lobby m_lobby;
         [SerializeField] ZoneDragInput m_drag;
         [SerializeField] Toast m_toast;
         [SerializeField] BattleAudio m_audio;
@@ -25,7 +25,7 @@ namespace DefenseBattle.View
         {
             m_runner.GameOver += OnGameOver;
             m_hud.ExitRequested += OnExit;
-            m_launch.Chosen += OnChosen;
+            m_lobby.Play += OnChosen;
             m_runner.GameStarted += g => m_audio.Bind(g); // 전투 음악 + 엔진 소리 (다시 하기 포함)
         }
 
@@ -33,20 +33,20 @@ namespace DefenseBattle.View
         void Start()
         {
             Localization.Init(m_runner.Catalog);
+            Ui.Sounds = () => m_audio.Play(Sfx.Button);
             m_audio.SwitchBgm(Bgm.Menu);
-            _ = m_boot.Run(ShowLaunch);
+            _ = m_boot.Run(ShowLobby);
         }
 
-        void ShowLaunch()
+        void ShowLobby()
         {
             m_audio.Unbind();
-            m_audio.SwitchBgm(Bgm.Menu); // 시작 화면 = 로비 자리
-            m_launch.Show();
+            m_audio.SwitchBgm(Bgm.Menu);
+            m_lobby.Show();
         }
 
         void OnChosen(BattleLaunch l)
         {
-            m_audio.Play(Sfx.Button);
             BattleLaunch.Current = l;
             CloseResult();
             m_runner.StartGame(l);
@@ -122,7 +122,7 @@ namespace DefenseBattle.View
             CloseResult();
             m_pausedForConfirm = false;
             m_runner.Stop();
-            ShowLaunch();
+            ShowLobby();
         }
     }
 }

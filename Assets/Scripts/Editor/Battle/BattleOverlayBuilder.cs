@@ -22,7 +22,7 @@ public static class BattleOverlayBuilder
         Toast toast = BuildToast(overlaySafe);
         BuildHeroPanel(overlaySafe, runner, hud, drag, toast, catalog);
         DefenseBattle.View.ResultPanel result = BuildResult(overlaySafe, catalog);
-        LaunchPanel launch = BuildLaunch(overlaySafe);
+        Lobby lobby = BuildLobby(overlaySafe, toast, catalog);
         BootPanel boot = BuildBoot(overlaySafe);
         toast.transform.SetAsLastSibling(); // 토스트는 맨 위
 
@@ -30,7 +30,7 @@ public static class BattleOverlayBuilder
         BattleSceneBuilder.Set(flow, "m_runner", runner);
         BattleSceneBuilder.Set(flow, "m_hud", hud);
         BattleSceneBuilder.Set(flow, "m_result", result);
-        BattleSceneBuilder.Set(flow, "m_launch", launch);
+        BattleSceneBuilder.Set(flow, "m_lobby", lobby);
         BattleSceneBuilder.Set(flow, "m_drag", drag);
         BattleSceneBuilder.Set(flow, "m_toast", toast);
         BattleSceneBuilder.Set(flow, "m_boot", boot);
@@ -147,31 +147,36 @@ public static class BattleOverlayBuilder
         return panel;
     }
 
-    /// <summary>임시 시작 화면: 로고 + 1-1 / 무한 모드 (3단계 로비가 대신하면 지운다)</summary>
-    static LaunchPanel BuildLaunch(RectTransform safe)
+    /// <summary>
+    /// 로비 칸 (Lobby 가 안을 코드로 그린다): 배경은 화면 전체, 내용·창은 안전 영역 안.
+    /// 오버레이 안전 영역보다 앞(뒤에 그려짐)에 둬서 결과 창·토스트가 로비 위에 뜬다.
+    /// </summary>
+    static Lobby BuildLobby(RectTransform safe, Toast toast, SpriteCatalog catalog)
     {
-        RectTransform host = BattleSceneBuilder.Rt(safe, "LaunchHost");
+        RectTransform host = BattleSceneBuilder.Rt(safe.parent, "LobbyHost");
         host.Fill();
-        var panel = host.gameObject.AddComponent<LaunchPanel>();
+        host.SetSiblingIndex(safe.GetSiblingIndex()); // 오버레이 안전 영역 뒤
+        var lobby = host.gameObject.AddComponent<Lobby>();
         RectTransform root = BattleSceneBuilder.Rt(host, "Panel");
         root.Fill();
         Image bg = Img(root, "Bg", AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/DefenseBattle/UI/Common/loading_bg.jpg"), Color.white);
         bg.rectTransform.Fill();
-        bg.preserveAspect = false;
-        Image logo = Img(root, "Logo", AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/DefenseBattle/UI/Common/logo.png"), Color.white);
-        logo.rectTransform.Place(new Vector2(0.5f, 0.7f), Vector2.zero, new Vector2(560, 300));
-        logo.preserveAspect = true;
-        Button stage = Btn(root, "Stage", "btn_red", 1.0f);
-        stage.GetComponent<RectTransform>().Place(new Vector2(0.5f, 0.35f), Vector2.zero, new Vector2(420, 110));
-        Txt(stage.transform, "Label", 36, Cream, TextAlignmentOptions.Center, BattleHudBuilder.Loc("캠페인") + " 1-1").rectTransform.Fill(0, 12, 0, 0);
-        Button endless = Btn(root, "Endless", "btn_blue", 1.0f);
-        endless.GetComponent<RectTransform>().Place(new Vector2(0.5f, 0.22f), Vector2.zero, new Vector2(420, 110));
-        Txt(endless.transform, "Label", 36, Cream, TextAlignmentOptions.Center, BattleHudBuilder.Loc("무한 모드")).rectTransform.Fill(0, 12, 0, 0);
-
-        BattleSceneBuilder.Set(panel, "m_root", root.gameObject);
-        BattleSceneBuilder.Set(panel, "m_stage", stage);
-        BattleSceneBuilder.Set(panel, "m_endless", endless);
-        return panel;
+        bg.raycastTarget = true; // 뒤의 전투 화면을 누르지 않게
+        Img(root, "Shade", null, new Color32(0x14, 0x10, 0x1c, 110)).rectTransform.Fill();
+        RectTransform area = BattleSceneBuilder.Rt(root, "SafeArea");
+        area.Fill();
+        area.gameObject.AddComponent<SafeAreaFitter>();
+        RectTransform content = BattleSceneBuilder.Rt(area, "Content");
+        content.Fill();
+        RectTransform popups = BattleSceneBuilder.Rt(area, "Popups");
+        popups.Fill();
+        root.gameObject.SetActive(false);
+        BattleSceneBuilder.Set(lobby, "m_catalog", catalog);
+        BattleSceneBuilder.Set(lobby, "m_root", root.gameObject);
+        BattleSceneBuilder.Set(lobby, "m_content", content);
+        BattleSceneBuilder.Set(lobby, "m_popups", popups);
+        BattleSceneBuilder.Set(lobby, "m_toast", toast);
+        return lobby;
     }
 
     static ZoneDragInput DragSurface(RectTransform area, BattleRunner runner)

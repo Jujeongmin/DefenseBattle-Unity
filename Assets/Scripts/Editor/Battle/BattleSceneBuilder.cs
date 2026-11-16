@@ -95,6 +95,7 @@ public static class BattleSceneBuilder
         Set(Object.FindAnyObjectByType<HeroPanel>(FindObjectsInactive.Include), "m_audio", audio);
         Set(Object.FindAnyObjectByType<BattleFlow>(FindObjectsInactive.Include), "m_audio", audio);
         Set(Object.FindAnyObjectByType<ZoneDragInput>(FindObjectsInactive.Include), "m_audio", audio);
+        Set(Object.FindAnyObjectByType<Lobby>(FindObjectsInactive.Include), "m_audio", audio);
 
         EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), ScenePath);
         AddToBuildSettingsFirst(ScenePath);
