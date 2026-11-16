@@ -10,7 +10,7 @@ using UnityEngine;
 /// 키스토어 비밀번호는 저장소나 대화에 남지 않도록 환경변수에서만 읽습니다:
 ///   RD_KEYSTORE_PASS  = 키스토어 비밀번호
 ///   RD_KEYALIAS_PASS  = 키 별칭 비밀번호 (없으면 키스토어 비밀번호와 동일하게 사용)
-/// 출력: 프로젝트 루트의 Builds/randomdefense-v{versionCode}.aab
+/// 출력: 프로젝트 루트의 Builds/defensebattle-v{versionCode}.aab
 /// </summary>
 public static class ReleaseBuilder
 {
@@ -43,11 +43,11 @@ public static class ReleaseBuilder
         EditorUserBuildSettings.development = false; // 정식 빌드 — 실제 광고 ID 사용
 
         Directory.CreateDirectory("Builds");
-        string output = $"Builds/randomdefense-v{PlayerSettings.Android.bundleVersionCode}.aab";
+        string output = $"Builds/defensebattle-v{PlayerSettings.Android.bundleVersionCode}.aab";
 
         BuildPlayerOptions options = new BuildPlayerOptions
         {
-            scenes = new[] { "Assets/Scenes/MainScene.unity", "Assets/Scenes/GameScene.unity" },
+            scenes = new[] { "Assets/Scenes/Battle.unity" },
             locationPathName = output,
             target = BuildTarget.Android,
             options = BuildOptions.None,

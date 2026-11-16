@@ -3,7 +3,8 @@ using GoogleMobileAds.Api;
 using GoogleMobileAds.Common;
 using UnityEngine;
 
-public sealed class AdMobRewardedAdService : IRewardedAdService
+/// <summary>AdMob 보상형 광고 하나를 불러 두고 보여 준다 (RewardAdsBridge 가 전투 화면 RewardAds 에 연결)</summary>
+public sealed class AdMobRewardedAdService
 {
 #if UNITY_ANDROID
     const string RealRewardedId = "ca-app-pub-4673017826771391/3563918015";
@@ -107,7 +108,6 @@ public sealed class AdMobRewardedAdService : IRewardedAdService
         if (!AdsRemoved) Load();
     }
 
-    static bool AdsRemoved => GManager.Instance != null &&
-                              GManager.Instance.IsProgress != null &&
-                              GManager.Instance.IsProgress.AdsRemoved;
+    /// <summary>광고 제거 패키지 (서버 경제 상태)</summary>
+    static bool AdsRemoved => DefenseBattle.View.EconCache.State.AdRemoved;
 }

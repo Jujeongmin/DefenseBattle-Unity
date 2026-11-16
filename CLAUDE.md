@@ -29,7 +29,7 @@
 ## 최적화 규칙 (모바일 - GC 스파이크 = 프레임 끊김)
 
 - **매 프레임 도는 코드에서 할당 금지**: `new` 객체·배열, LINQ, 바깥 변수를 잡는 람다, `foreach` 로 박싱되는 컬렉션, 문자열 조합을 쓰지 않는다. 버퍼는 필드로 두고 `Clear()` 후 재사용한다.
-- **오브젝트 풀링**: 자주 생기고 사라지는 것은 풀에서 꺼내 쓴다. Core 는 `ObjectPool<T>` (몹·이펙트·불 장판), View 는 스프라이트·투사체·데미지 숫자 GameObject 를 풀링한다 (기존 `PoolManager`/`EffectPool` 참고). `Instantiate`/`Destroy` 를 전투 중에 부르지 않는다.
+- **오브젝트 풀링**: 자주 생기고 사라지는 것은 풀에서 꺼내 쓴다. Core 는 `ObjectPool<T>` (몹·이펙트·불 장판), View 는 스프라이트·투사체·데미지 숫자 GameObject 를 풀링한다 (`ActorViews`·`EffectsView`·`FloatingTextPool` 참고). `Instantiate`/`Destroy` 를 전투 중에 부르지 않는다.
 - **Core 객체를 프레임 넘어 들고 있지 않는다**: `Mob`·`Effect` 는 엔진이 재사용한다. View 는 `Mob.Id` 로 스프라이트를 짝짓고, 매 프레임 `Game.Mobs`/`Game.Effects` 를 다시 읽는다.
 - **거리 비교는 제곱으로** (`JsMath.DistSq`/`Within`), 고정된 값(길 표본 등)은 한 번만 계산해 둔다.
 - Unity 쪽: `Update` 안 `GetComponent`·`Find` 금지 (캐싱), TMP 텍스트는 값이 바뀔 때만 갱신, 움직이는 UI 와 정적 UI 는 Canvas 를 나눈다, 스프라이트는 Sprite Atlas 로 묶는다.
