@@ -21,6 +21,131 @@ public static class BattleOverlayBuilder
         ZoneDragInput drag = DragSurface((RectTransform)hudSafe.Find("BoardArea"), runner);
         Toast toast = BuildToast(overlaySafe);
         BuildHeroPanel(overlaySafe, runner, hud, drag, toast, catalog);
+        DefenseBattle.View.ResultPanel result = BuildResult(overlaySafe, catalog);
+        LaunchPanel launch = BuildLaunch(overlaySafe);
+        toast.transform.SetAsLastSibling(); // 토스트는 맨 위
+
+        var flow = new GameObject("BattleFlow").AddComponent<BattleFlow>();
+        BattleSceneBuilder.Set(flow, "m_runner", runner);
+        BattleSceneBuilder.Set(flow, "m_hud", hud);
+        BattleSceneBuilder.Set(flow, "m_result", result);
+        BattleSceneBuilder.Set(flow, "m_launch", launch);
+        BattleSceneBuilder.Set(flow, "m_drag", drag);
+        BattleSceneBuilder.Set(flow, "m_toast", toast);
+        var so = new SerializedObject(runner);
+        so.FindProperty("m_autoStart").boolValue = false; // 시작 화면이 고른다
+        so.ApplyModifiedPropertiesWithoutUndo();
+        new GameObject("RewardAdsBridge").AddComponent<RewardAdsBridge>();
+    }
+
+    /// <summary>결과 창 (style.css .dialog.result): 가운데 종이 창, 위에 리본 제목</summary>
+    static DefenseBattle.View.ResultPanel BuildResult(RectTransform safe, SpriteCatalog catalog)
+    {
+        RectTransform host = BattleSceneBuilder.Rt(safe, "ResultHost");
+        host.Fill();
+        var panel = host.gameObject.AddComponent<DefenseBattle.View.ResultPanel>();
+        RectTransform root = BattleSceneBuilder.Rt(host, "Panel");
+        root.Fill();
+        Image dim = Img(root, "Dim", null, new Color32(0, 0, 0, 160));
+        dim.rectTransform.Fill();
+
+        Image dialog = Img(root, "Dialog", FrameSprite("paper"), Color.white, 1.57f, true);
+        dialog.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0, 0), new Vector2(600, 600));
+        RectTransform d = dialog.rectTransform;
+        var col = dialog.gameObject.AddComponent<VerticalLayoutGroup>();
+        col.padding = new RectOffset(40, 40, 70, 40);
+        col.spacing = 14;
+        col.childAlignment = TextAnchor.UpperCenter;
+        col.childControlWidth = col.childControlHeight = true;
+        col.childForceExpandWidth = true;
+        col.childForceExpandHeight = false;
+        var fitter = dialog.gameObject.AddComponent<ContentSizeFitter>();
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        Image ribbon = Img(root, "Ribbon", FrameSprite("ribbon_yellow"), Color.white, 2.9f, true);
+        ribbon.rectTransform.SetParent(d, false);
+        var ribbonLe = ribbon.gameObject.AddComponent<LayoutElement>();
+        ribbonLe.ignoreLayout = true;
+        ribbon.rectTransform.Place(new Vector2(0.5f, 1), new Vector2(0, -8), new Vector2(420, 80));
+        TextMeshProUGUI title = Txt(ribbon.transform, "Title", 36, Cream, TextAlignmentOptions.Center);
+        title.rectTransform.Fill(30, 10, 30, 0);
+        title.enableAutoSizing = true;
+        title.fontSizeMin = 20;
+        title.fontSizeMax = 36;
+
+        RectTransform stars = BattleSceneBuilder.Rt(d, "Stars");
+        Layout(stars.gameObject, preferredHeight: 72);
+        var starImages = new Image[3];
+        for (int i = 0; i < 3; i++)
+        {
+            starImages[i] = Img(stars, "Star" + i, catalog.Icon("star"), Color.white);
+            starImages[i].rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2((i - 1) * 80, i == 1 ? 6 : 0), new Vector2(64, 64));
+        }
+        TextMeshProUGUI sub = InkTxt(d, "Sub", 24, TextAlignmentOptions.Center);
+        sub.textWrappingMode = TextWrappingModes.Normal;
+        TextMeshProUGUI rewards = InkTxt(d, "Rewards", 28, TextAlignmentOptions.Center);
+        TextMeshProUGUI extra = InkTxt(d, "Extra", 20, TextAlignmentOptions.Center);
+        extra.textWrappingMode = TextWrappingModes.Normal;
+        extra.color = new Color32(0x7d, 0x5d, 0x42, 255);
+
+        var buttons = new Button[3];
+        var texts = new TextMeshProUGUI[3];
+        for (int i = 0; i < 3; i++)
+        {
+            buttons[i] = Btn(d, "Button" + i, "btn_gray", 1.7f);
+            Layout(buttons[i].gameObject, preferredHeight: 84);
+            texts[i] = Txt(buttons[i].transform, "Label", 28, Cream, TextAlignmentOptions.Center);
+            texts[i].rectTransform.Fill(20, 12, 20, 6);
+            texts[i].enableAutoSizing = true;
+            texts[i].fontSizeMin = 16;
+            texts[i].fontSizeMax = 28;
+        }
+
+        BattleSceneBuilder.Set(panel, "m_root", root.gameObject);
+        BattleSceneBuilder.Set(panel, "m_ribbon", ribbon);
+        BattleSceneBuilder.Set(panel, "m_winRibbon", FrameSprite("ribbon_yellow"));
+        BattleSceneBuilder.Set(panel, "m_loseRibbon", FrameSprite("ribbon_red"));
+        BattleSceneBuilder.Set(panel, "m_title", title);
+        BattleSceneBuilder.Set(panel, "m_stars", stars.gameObject);
+        BattleSceneBuilder.Set(panel, "m_starOn", catalog.Icon("star"));
+        BattleSceneBuilder.Set(panel, "m_starOff", catalog.Icon("star_off"));
+        BattleSceneBuilder.Set(panel, "m_sub", sub);
+        BattleSceneBuilder.Set(panel, "m_rewards", rewards);
+        BattleSceneBuilder.Set(panel, "m_extra", extra);
+        SetArray(panel, "m_starImages", starImages);
+        SetArray(panel, "m_buttons", buttons);
+        SetArray(panel, "m_buttonTexts", texts);
+        // ResultStyle 순서: Plain, Red, Green, Blue
+        SetArray(panel, "m_styleSprites", new Object[] { FrameSprite("btn_gray"), FrameSprite("btn_red"), FrameSprite("btn_green"), FrameSprite("btn_blue") });
+        SetArray(panel, "m_stylePressed", new Object[] { FrameSprite("btn_gray_down"), FrameSprite("btn_red_down"), FrameSprite("btn_green_down"), FrameSprite("btn_blue_down") });
+        return panel;
+    }
+
+    /// <summary>임시 시작 화면: 로고 + 1-1 / 무한 모드 (3단계 로비가 대신하면 지운다)</summary>
+    static LaunchPanel BuildLaunch(RectTransform safe)
+    {
+        RectTransform host = BattleSceneBuilder.Rt(safe, "LaunchHost");
+        host.Fill();
+        var panel = host.gameObject.AddComponent<LaunchPanel>();
+        RectTransform root = BattleSceneBuilder.Rt(host, "Panel");
+        root.Fill();
+        Image bg = Img(root, "Bg", AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/DefenseBattle/UI/Common/loading_bg.jpg"), Color.white);
+        bg.rectTransform.Fill();
+        bg.preserveAspect = false;
+        Image logo = Img(root, "Logo", AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/DefenseBattle/UI/Common/logo.png"), Color.white);
+        logo.rectTransform.Place(new Vector2(0.5f, 0.7f), Vector2.zero, new Vector2(560, 300));
+        logo.preserveAspect = true;
+        Button stage = Btn(root, "Stage", "btn_red", 1.0f);
+        stage.GetComponent<RectTransform>().Place(new Vector2(0.5f, 0.35f), Vector2.zero, new Vector2(420, 110));
+        Txt(stage.transform, "Label", 36, Cream, TextAlignmentOptions.Center, BattleHudBuilder.Loc("캠페인") + " 1-1").rectTransform.Fill(0, 12, 0, 0);
+        Button endless = Btn(root, "Endless", "btn_blue", 1.0f);
+        endless.GetComponent<RectTransform>().Place(new Vector2(0.5f, 0.22f), Vector2.zero, new Vector2(420, 110));
+        Txt(endless.transform, "Label", 36, Cream, TextAlignmentOptions.Center, BattleHudBuilder.Loc("무한 모드")).rectTransform.Fill(0, 12, 0, 0);
+
+        BattleSceneBuilder.Set(panel, "m_root", root.gameObject);
+        BattleSceneBuilder.Set(panel, "m_stage", stage);
+        BattleSceneBuilder.Set(panel, "m_endless", endless);
+        return panel;
     }
 
     static ZoneDragInput DragSurface(RectTransform area, BattleRunner runner)

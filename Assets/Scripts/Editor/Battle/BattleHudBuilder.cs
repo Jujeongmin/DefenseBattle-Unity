@@ -310,7 +310,7 @@ public static class BattleHudBuilder
     }
 
     /// <summary>레이아웃 그룹 안 크기 (지정 안 한 값은 -1 = 쓰지 않음)</summary>
-    static void Layout(GameObject go, float minWidth = -1, float preferredWidth = -1, float flexibleWidth = -1,
+    internal static void Layout(GameObject go, float minWidth = -1, float preferredWidth = -1, float flexibleWidth = -1,
         float minHeight = -1, float preferredHeight = -1, float flexibleHeight = -1)
     {
         var le = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
