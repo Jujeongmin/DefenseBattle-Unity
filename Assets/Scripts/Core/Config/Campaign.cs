@@ -17,8 +17,10 @@ namespace DefenseBattle.Core
         };
         public const int StagesPerChapter = 10;
         // 난이도 곡선: 챕터 내에서 점진 상승, 챕터 시작 시 웨이브 수 증가로 한 번 더 상승
-        public static readonly double[] StageHpBase = { 0.55, 1.4, 2.6 };
-        public static readonly double[] StageHpStep = { 0.08, 0.14, 0.16 };
+        // 원본 config.ts 는 { 0.55, 1.4, 2.6 } / { 0.08, 0.14, 0.16 }. 2026-11-16 조정: 챕터2 ×1.5, 챕터3 ×2
+        // (연구 없이 밀어붙이면 챕터3 에서 막히고, 연구 1/4 이면 전부 깬다 - Sim stages). 실제 플레이 뒤 다시 맞춘다.
+        public static readonly double[] StageHpBase = { 0.55, 2.1, 5.2 };
+        public static readonly double[] StageHpStep = { 0.08, 0.21, 0.32 };
 
         public static readonly StageDef[] Stages = BuildStages();
         static readonly Dictionary<string, StageDef> s_byId = BuildIndex();

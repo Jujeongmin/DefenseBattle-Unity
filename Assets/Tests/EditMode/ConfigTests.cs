@@ -31,12 +31,14 @@ namespace DefenseBattle.Core.Tests
         }
 
         [Test]
-        public void StageHpCurve_MatchesOriginal()
+        public void StageHpCurve_ChapterOneOriginal_LaterChaptersTuned()
         {
+            // 챕터1 은 원본 그대로, 챕터2 는 원본 ×1.5, 챕터3 은 원본 ×2 (2026-11-16 조정)
             double[] expected =
             {
-                0.55, 0.63, 0.71, 0.79, 0.87, 0.95, 1.03, 1.11, 1.19, 1.27, 1.4, 1.54, 1.68, 1.82, 1.96,
-                2.1, 2.24, 2.38, 2.52, 2.66, 2.6, 2.76, 2.92, 3.08, 3.24, 3.4, 3.56, 3.72, 3.88, 4.04,
+                0.55, 0.63, 0.71, 0.79, 0.87, 0.95, 1.03, 1.11, 1.19, 1.27,
+                2.1, 2.31, 2.52, 2.73, 2.94, 3.15, 3.36, 3.57, 3.78, 3.99,
+                5.2, 5.52, 5.84, 6.16, 6.48, 6.8, 7.12, 7.44, 7.76, 8.08,
             };
             Assert.AreEqual(30, Campaign.Stages.Length);
             for (int i = 0; i < expected.Length; i++) Assert.AreEqual(expected[i], Campaign.Stages[i].HpMult, 1e-12);
