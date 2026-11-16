@@ -11,48 +11,48 @@ Claude Code가 Unity 에디터를 직접 조작(오브젝트 생성·씬 편집�
 | Claude Code | 데스크톱 앱 또는 CLI (`npm install -g @anthropic-ai/claude-code`) |
 | Python | 3.10 이상 |
 | uv | Python 패키지 매니저. Windows PowerShell: `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 \| iex"` · macOS: `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
-| Git | 두 저장소 클론용 |
+| Git | 두 저장소 클론용. Unity Package Manager 가 MCP 패키지를 git 으로 받으므로 PATH 에 있어야 한다 |
 
 ## 2. 저장소 두 개를 나란히 클론
 
-이식 작업 중 Defense Battle 원본 코드를 계속 참고하므로 **같은 부모 폴더**에 둔다.
+이식 작업 중 Defense Battle 원본 코드를 계속 참고하므로 **같은 부모 폴더**에 둔다. 작업은 `main` 에서 한다.
 
 ```bash
 mkdir JunJa && cd JunJa
-git clone https://github.com/Jujeongmin/RandomDefense-Unity.git
+git clone https://github.com/Jujeongmin/DefenseBattle-Unity.git
 git clone https://github.com/Jujeongmin/DefenseBattle.git
-cd RandomDefense-Unity
-git checkout claude/peaceful-fermat-lqq9mg   # 이식 작업 브랜치
 ```
 
 `Assets/Down/` 서드파티 팩(README의 "클론 시 주의")은 Defense Battle 픽셀아트로 교체할 예정이라
 새 앱 작업에는 필요 없다. 다만 교체가 끝나기 전까지 기존 씬을 열면 참조가 깨진 채로 보일 수 있다.
 
-## 3. Unity에 MCP for Unity 패키지 설치
+## 3. Unity 에서 프로젝트 열기
 
-1. Unity Hub로 `RandomDefense-Unity` 프로젝트를 연다.
-2. **Window → Package Manager → + → Add package from git URL...**
-3. 아래 주소 입력:
-   ```
-   https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#main
-   ```
-4. 설치되면 **Window → MCP for Unity** 창이 생긴다.
+MCP for Unity 패키지(`com.coplaydev.unity-mcp` v9.7.3)는 `Packages/manifest.json` 에 이미 들어 있어서 따로 설치할 필요가 없다.
+
+1. Unity Hub로 `DefenseBattle-Unity` 프로젝트를 연다. 처음 열 때 패키지를 받고 컴파일하느라 몇 분 걸린다.
+2. **Window → MCP for Unity** 창이 생긴다. 처음엔 설치 마법사가 Python·uv 를 확인한다.
+3. 창의 **Advanced Settings → Auto-Start on Editor Load** 를 켜 둔다. 그러면 에디터를 열 때마다
+   MCP 서버(`http://127.0.0.1:8080`, 처음엔 `uvx` 가 `mcpforunityserver` 를 받는다)가 켜지고 에디터가 붙는다.
+   켜지 않으면 창에서 **Start Server** 를 누른다.
+4. 콘솔에 `MCP-FOR-UNITY: Session connected` 가 보이면 서버 연결 완료.
 
 ## 4. Claude Code 연결
 
 **자동:** `Window → MCP for Unity` 창에서 **Configure All Detected Clients** 클릭 → Claude Code가 감지되면 자동 등록.
 
-**수동 (자동이 안 될 때):** 프로젝트 폴더에서 터미널을 열고, MCP for Unity 창에 표시되는 명령을 그대로 실행한다.
-HTTP 모드 기본값이면 보통 다음과 같다.
+**수동 (자동이 안 될 때):** 프로젝트 폴더에서 터미널을 열고 실행한다 (HTTP 모드 기본값).
 
 ```bash
 claude mcp add --scope local --transport http UnityMCP http://127.0.0.1:8080/mcp
-claude mcp list        # UnityMCP 가 connected 로 보이면 성공
+claude mcp list        # UnityMCP 가 Connected 로 보이면 성공
 ```
+
+등록은 그 PC·그 폴더에 한 번만 하면 된다. **이미 켜져 있던 Claude Code 세션에는 Unity 도구가 붙지 않으니** 새 세션을 연다.
 
 ## 5. 확인
 
-1. Unity 에디터를 켜 둔 채로, `RandomDefense-Unity` 폴더에서 Claude Code를 실행한다.
+1. Unity 에디터를 켜 둔 채로, `DefenseBattle-Unity` 폴더에서 Claude Code 새 세션을 연다.
 2. `/mcp` 를 입력해 `UnityMCP` 가 연결돼 있는지 본다.
 3. 시험 삼아 이렇게 말해 본다: *"빈 씬에 큐브를 하나 만들고, 확인했으면 지워 줘."*
    에디터에 큐브가 생겼다 사라지면 끝.
@@ -61,7 +61,7 @@ claude mcp list        # UnityMCP 가 connected 로 보이면 성공
 
 Claude Code에 이렇게 말하면 된다.
 
-> `docs/superpowers/specs/2026-10-19-defense-battle-port-design.md` 의 0단계부터 진행해 줘.
+> `docs/superpowers/specs/2026-10-19-defense-battle-port-design.md` 를 읽고, README 진행 상황에서 다음 단계부터 진행해 줘.
 
 저장소 루트의 `CLAUDE.md` 에 작업 규칙이 있어서 Claude Code가 자동으로 읽는다.
 
