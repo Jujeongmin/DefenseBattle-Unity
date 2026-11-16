@@ -10,7 +10,11 @@ public sealed class RewardAdsBridge : MonoBehaviour
 {
     void Awake()
     {
-        if (!Application.isEditor) RewardAds.Service = new AdMobRewardAds();
+        if (Application.isEditor) return;
+        RewardAds.Service = new AdMobRewardAds();
+        // 처음 쓸 때 AdMob 초기화·광고 불러오기가 시작된다 - 판이 끝나는 순간이 아니라 씬이 열릴 때 미리 깨워
+        // 첫 패배에도 부활 광고가 준비돼 있게 한다 (동의 창 순서는 7단계 출시 준비에서 정리)
+        _ = AdMobRewardedAdService.Shared.IsReady;
     }
 
     sealed class AdMobRewardAds : IRewardAds

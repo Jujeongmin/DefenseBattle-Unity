@@ -34,7 +34,14 @@ public static class BattleHudBuilder
         BattleSceneBuilder.Set(hud, "m_runner", runner);
 
         BuildTopBar(hud, (RectTransform)safe.Find("TopBar"));
-        BuildBoardOverlay(hud, (RectTransform)safe.Find("BoardArea"));
+        // 위·아래 UI 사이 띠 안의 정사각 칸 = 전장 (#battlefield aspect-ratio 1). 전장 위 표시와 카메라는 이 칸에 맞춘다
+        RectTransform board = BattleSceneBuilder.Rt(safe.Find("BoardArea"), "Board");
+        board.Fill();
+        var fitter = board.gameObject.AddComponent<AspectRatioFitter>();
+        fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+        fitter.aspectRatio = 1f;
+        BattleSceneBuilder.Set(runner, "m_boardArea", board);
+        BuildBoardOverlay(hud, board);
         BuildProgress(hud, (RectTransform)safe.Find("ProgressRow"));
         BuildControls(hud, (RectTransform)safe.Find("Controls"));
         return hud;

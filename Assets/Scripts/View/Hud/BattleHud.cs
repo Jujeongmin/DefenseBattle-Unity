@@ -14,6 +14,7 @@ namespace DefenseBattle.View
     public sealed class BattleHud : MonoBehaviour
     {
         [SerializeField] BattleRunner m_runner;
+        [SerializeField] BattleAudio m_audio;
         [Header("상단바")]
         [SerializeField] Image m_portrait;
         [SerializeField] TextMeshProUGUI m_race;
@@ -84,11 +85,22 @@ namespace DefenseBattle.View
             m_pauseButton.onClick.AddListener(OnPause);
             m_speedButton.onClick.AddListener(OnSpeed);
             m_muteButton.onClick.AddListener(OnMute);
-            m_heroButton.onClick.AddListener(() => HeroRequested?.Invoke(null, null));
-            m_exitButton.onClick.AddListener(() => ExitRequested?.Invoke());
+            m_heroButton.onClick.AddListener(() => { m_audio.Play(Sfx.Button); HeroRequested?.Invoke(null, null); });
+            m_exitButton.onClick.AddListener(() => { m_audio.Play(Sfx.Button); ExitRequested?.Invoke(); });
             m_summon.GoldShort += () => m_goldFlash = 0.15f;
+            // 소환음: 신화 이상이면 팡파르 (ui.ts audio.summon(gradeIndex >= mythic))
+            m_summon.Summoned += u => m_audio.Play(u.GradeIndex >= (int)GradeKey.Mythic ? Sfx.Mythic : Sfx.Summon);
             m_stacks.MergeRequested += job => HeroRequested?.Invoke(job, true);
+            m_stacks.Upgraded += () => m_audio.Play(Sfx.Button);
+            m_runner.GameStopped += OnGameStopped;
             SetMuteIcon();
+        }
+
+        /// <summary>판이 내려감: 지난 판을 놓는다 (리뷰: Stop 뒤에도 옛 Game 을 들고 있던 문제)</summary>
+        void OnGameStopped()
+        {
+            m_game = null;
+            m_summon.Game = null;
         }
 
         void OnDestroy()
@@ -96,6 +108,7 @@ namespace DefenseBattle.View
             if (m_runner == null) return;
             m_runner.GameStarted -= OnGameStarted;
             m_runner.Drawn -= Refresh;
+            m_runner.GameStopped -= OnGameStopped;
         }
 
         void OnGameStarted(Game g)
@@ -213,6 +226,7 @@ namespace DefenseBattle.View
         void OnPause()
         {
             if (m_game == null) return;
+            m_audio.Play(Sfx.Button);
             m_game.Paused = !m_game.Paused;
             m_pauseIcon.sprite = m_runner.Catalog.Icon(m_game.Paused ? "play" : "pause");
         }
@@ -220,23 +234,24 @@ namespace DefenseBattle.View
         void OnSpeed()
         {
             if (m_game == null) return;
+            m_audio.Play(Sfx.Button);
             m_speedIdx = (m_speedIdx + 1) % s_speeds.Length;
             m_game.Speed = s_speeds[m_speedIdx];
             m_speedText.text = m_game.Speed + "x";
             PlayerPrefs.SetFloat(SpeedKey, (float)m_game.Speed);
         }
 
+        /// <summary>스피커 버튼: 효과음·음악 모두 끄고 켬 (저장 - audio.ts toggleMute)</summary>
         void OnMute()
         {
-            // 오디오는 후속 작업 - 지금은 전체 소리만 끈다
-            AudioListener.volume = AudioListener.volume > 0 ? 0 : 1;
+            m_audio.ToggleMute();
             SetMuteIcon();
         }
 
         void SetMuteIcon()
         {
             if (m_runner != null && m_runner.Catalog != null && m_muteIcon != null)
-                m_muteIcon.sprite = m_runner.Catalog.Icon(AudioListener.volume > 0 ? "sound" : "mute");
+                m_muteIcon.sprite = m_runner.Catalog.Icon(SoundSettings.Muted ? "mute" : "sound");
         }
 
         /// <summary>"Wave 3/10" (PvP 처럼 끝이 없으면 "Wave 3"), 시작 전에도 1 (ui.ts update)</summary>

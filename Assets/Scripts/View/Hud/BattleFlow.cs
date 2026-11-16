@@ -15,6 +15,7 @@ namespace DefenseBattle.View
         [SerializeField] LaunchPanel m_launch;
         [SerializeField] ZoneDragInput m_drag;
         [SerializeField] Toast m_toast;
+        [SerializeField] BattleAudio m_audio;
 
         GameOverData m_last;
         bool m_pausedForConfirm;
@@ -24,12 +25,21 @@ namespace DefenseBattle.View
             m_runner.GameOver += OnGameOver;
             m_hud.ExitRequested += OnExit;
             m_launch.Chosen += OnChosen;
+            m_runner.GameStarted += g => m_audio.Bind(g); // 전투 음악 + 엔진 소리 (다시 하기 포함)
         }
 
-        void Start() => m_launch.Show();
+        void Start() => ShowLaunch();
+
+        void ShowLaunch()
+        {
+            m_audio.Unbind();
+            m_audio.SwitchBgm(Bgm.Menu); // 시작 화면 = 로비 자리
+            m_launch.Show();
+        }
 
         void OnChosen(BattleLaunch l)
         {
+            m_audio.Play(Sfx.Button);
             BattleLaunch.Current = l;
             CloseResult();
             m_runner.StartGame(l);
@@ -67,12 +77,18 @@ namespace DefenseBattle.View
         void OnAction(ResultAction a)
         {
             Game g = m_runner.Game;
+            m_audio.Play(Sfx.Button);
             switch (a)
             {
                 case ResultAction.Revive:
                     RewardAds.Service.Show(ok =>
                     {
-                        if (ok && g == m_runner.Game && g.Revive()) CloseResult();
+                        if (ok && g == m_runner.Game && g.Revive())
+                        {
+                            CloseResult();
+                            m_audio.Play(Sfx.Merge); // main.ts: 부활하면 audio.merge()
+                            m_audio.SwitchBgm(g.IsBossWave ? Bgm.Boss : Bgm.Battle); // 판 끝에서 멈춘 음악을 다시
+                        }
                         else m_toast.Show(Loc.Tl("광고를 끝까지 보면 부활할 수 있어요"));
                     });
                     break;
@@ -99,7 +115,7 @@ namespace DefenseBattle.View
             CloseResult();
             m_pausedForConfirm = false;
             m_runner.Stop();
-            m_launch.Show();
+            ShowLaunch();
         }
     }
 }

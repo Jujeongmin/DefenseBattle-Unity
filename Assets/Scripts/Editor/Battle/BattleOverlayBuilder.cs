@@ -18,7 +18,7 @@ public static class BattleOverlayBuilder
 
     public static void Build(RectTransform overlaySafe, RectTransform hudSafe, BattleRunner runner, BattleHud hud, SpriteCatalog catalog)
     {
-        ZoneDragInput drag = DragSurface((RectTransform)hudSafe.Find("BoardArea"), runner);
+        ZoneDragInput drag = DragSurface((RectTransform)hudSafe.Find("BoardArea/Board"), runner);
         Toast toast = BuildToast(overlaySafe);
         BuildHeroPanel(overlaySafe, runner, hud, drag, toast, catalog);
         DefenseBattle.View.ResultPanel result = BuildResult(overlaySafe, catalog);

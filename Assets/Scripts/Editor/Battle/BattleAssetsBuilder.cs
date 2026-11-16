@@ -35,8 +35,45 @@ public static class BattleAssetsBuilder
         TMP_FontAsset number = BuildFont("Assets/Fonts/DefenseBattle/Galmuri11-Bold.ttf", NumberFontPath, GlyphRenderMode.SDFAA, 48, 6);
         BuildIconSpriteAsset();
         BuildCatalog(font, bold, number);
+        BuildSoundCatalog();
         AssetDatabase.SaveAssets();
         Debug.Log("[BattleAssets] 완료");
+    }
+
+    // ---------------- 소리 ----------------
+    /// <summary>Sfx/Bgm 이름 → 파일 (Sfx.BossKill → boss_kill.mp3)</summary>
+    static void BuildSoundCatalog()
+    {
+        const string audio = "Assets/Audio/DefenseBattle/";
+        var sfxNames = (Sfx[])System.Enum.GetValues(typeof(Sfx));
+        var sfx = new AudioClip[sfxNames.Length];
+        for (int i = 0; i < sfxNames.Length; i++)
+            sfx[i] = AssetDatabase.LoadAssetAtPath<AudioClip>(audio + "Sfx/" + FileName(sfxNames[i].ToString()) + ".mp3");
+        var bgmNames = (Bgm[])System.Enum.GetValues(typeof(Bgm));
+        var bgm = new AudioClip[bgmNames.Length];
+        for (int i = 0; i < bgmNames.Length; i++)
+            bgm[i] = AssetDatabase.LoadAssetAtPath<AudioClip>(audio + "Bgm/" + FileName(bgmNames[i].ToString()) + ".mp3");
+
+        var catalog = AssetDatabase.LoadAssetAtPath<SoundCatalog>(SoundCatalog.AssetPath);
+        if (catalog == null)
+        {
+            catalog = ScriptableObject.CreateInstance<SoundCatalog>();
+            AssetDatabase.CreateAsset(catalog, SoundCatalog.AssetPath);
+        }
+        catalog.EditorFill(sfx, bgm);
+        EditorUtility.SetDirty(catalog);
+    }
+
+    /// <summary>PascalCase → snake_case (BossKill → boss_kill)</summary>
+    static string FileName(string name)
+    {
+        var sb = new System.Text.StringBuilder();
+        for (int i = 0; i < name.Length; i++)
+        {
+            if (i > 0 && char.IsUpper(name[i])) sb.Append('_');
+            sb.Append(char.ToLowerInvariant(name[i]));
+        }
+        return sb.ToString();
     }
 
     // ---------------- 카탈로그 ----------------

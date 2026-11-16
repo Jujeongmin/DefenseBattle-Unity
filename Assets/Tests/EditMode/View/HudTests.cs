@@ -65,6 +65,18 @@ namespace DefenseBattle.View.Tests
         }
 
         [Test]
+        public void SummonHold_PausedBeforeFirstAutoSummon_NoSummon()
+        {
+            Game g = NewGame(10000);
+            var hold = new SummonHold();
+            hold.PointerDown();
+            g.Paused = true;
+            Assert.AreEqual(0, hold.Tick(0.4f, g), "일시정지 중엔 0.38초 뒤 첫 연속 소환도 없음");
+            Assert.AreEqual(0, g.SummonCount);
+            Assert.IsFalse(hold.Holding);
+        }
+
+        [Test]
         public void Tap_SummonsOnce_HoldReleaseDoesNotDoubleCount()
         {
             Game g = NewGame(10000);

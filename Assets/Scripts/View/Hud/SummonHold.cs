@@ -43,7 +43,7 @@ namespace DefenseBattle.View
                 m_held = true;
                 m_repeating = true;
                 m_timer = 0; // setInterval 은 첫 소환 순간부터 센다
-                if (!Once(g)) { m_holding = false; return 0; }
+                if (g.Paused || !Once(g)) { m_holding = false; return 0; }
                 return 1;
             }
             while (m_holding && m_timer >= Interval)

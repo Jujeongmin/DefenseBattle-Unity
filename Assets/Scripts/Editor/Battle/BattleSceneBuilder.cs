@@ -88,6 +88,14 @@ public static class BattleSceneBuilder
         BattleHud hud = BattleHudBuilder.Build(staticSafe, runner, catalog);
         BattleOverlayBuilder.Build(overlaySafe, staticSafe, runner, hud, catalog);
 
+        // 소리 (audio.ts): 효과음 목소리 풀 + 배경음악
+        var audio = new GameObject("Audio").AddComponent<BattleAudio>();
+        Set(audio, "m_catalog", AssetDatabase.LoadAssetAtPath<SoundCatalog>(SoundCatalog.AssetPath));
+        Set(hud, "m_audio", audio);
+        Set(Object.FindFirstObjectByType<HeroPanel>(FindObjectsInactive.Include), "m_audio", audio);
+        Set(Object.FindFirstObjectByType<BattleFlow>(FindObjectsInactive.Include), "m_audio", audio);
+        Set(Object.FindFirstObjectByType<ZoneDragInput>(FindObjectsInactive.Include), "m_audio", audio);
+
         EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), ScenePath);
         AddToBuildSettingsFirst(ScenePath);
         Debug.Log("[BattleScene] " + ScenePath + " 저장");

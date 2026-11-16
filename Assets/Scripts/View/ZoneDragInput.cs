@@ -7,6 +7,7 @@ namespace DefenseBattle.View
     public sealed class ZoneDragInput : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
     {
         [SerializeField] BattleRunner m_runner;
+        [SerializeField] BattleAudio m_audio;
 
         public readonly ZoneDragLogic Logic = new ZoneDragLogic();
         /// <summary>패널·결과 창이 열려 있으면 true (드래그를 받지 않는다)</summary>
@@ -29,7 +30,7 @@ namespace DefenseBattle.View
         public void OnPointerUp(PointerEventData e)
         {
             if (m_runner.Game == null) return;
-            Logic.Up(e.pointerId, ToLogical(e.position), m_runner.Game, Blocked);
+            if (Logic.Up(e.pointerId, ToLogical(e.position), m_runner.Game, Blocked) && m_audio != null) m_audio.Play(Sfx.Button);
         }
 
         void Update()

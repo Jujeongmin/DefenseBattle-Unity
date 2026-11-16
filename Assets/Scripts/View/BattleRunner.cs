@@ -46,6 +46,8 @@ namespace DefenseBattle.View
 
         /// <summary>새 판이 시작됨 (HUD 등이 새 Game 에 붙는다)</summary>
         public event Action<Game> GameStarted;
+        /// <summary>판을 내림 (로비로) - 화면·소리가 지난 판에서 떨어진다</summary>
+        public event Action GameStopped;
         /// <summary>판 끝 (결과·부활 흐름)</summary>
         public event Action<GameOverData> GameOver;
         /// <summary>그리기가 끝난 뒤 (HUD 갱신)</summary>
@@ -66,6 +68,7 @@ namespace DefenseBattle.View
         {
             if (Game != null) Game.GameEnded -= OnGameEnded;
             Game = null;
+            GameStopped?.Invoke();
             m_board.ResetState();
             m_actors.ResetState();
             m_under.Begin(); m_under.End();

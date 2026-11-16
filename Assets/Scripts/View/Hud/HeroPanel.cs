@@ -15,6 +15,7 @@ namespace DefenseBattle.View
         [SerializeField] BattleHud m_hud;
         [SerializeField] ZoneDragInput m_drag;
         [SerializeField] Toast m_toast;
+        [SerializeField] BattleAudio m_audio;
         [SerializeField] GameObject m_root;
         [SerializeField] Button m_dim;
         [SerializeField] Button m_close;
@@ -106,8 +107,12 @@ namespace DefenseBattle.View
         void TapGrade(int gi)
         {
             if (m_game == null) return;
+            int before = m_game.CountOf(m_logic.Job, (GradeKey)gi);
+            bool selling = !m_logic.MergeMode;
             string toast = m_logic.TapGrade(m_game, gi);
             if (toast != null) m_toast.Show(toast);
+            // 판매되면 동전 소리 (ui.ts: sellMany > 0 → audio.coin). 합성 소리는 엔진 Merged 이벤트로
+            if (selling && m_game.CountOf(m_logic.Job, (GradeKey)gi) < before) m_audio.Play(Sfx.Coin);
             Render();
         }
 
