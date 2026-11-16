@@ -1,0 +1,79 @@
+# Core 게임 규칙·서버 테스트와 밸런스 시뮬레이터 (Unity 없이 .NET 8)
+# 로컬 PC 에서 스마트 앱 컨트롤이 새로 빌드한 DLL 을 막아서 여기서 돌린다.
+# 결과는 각 실행의 Summary 탭과 아티팩트(sim-*.txt)에 남는다.
+name: Core tests and balance sim
+
+on:
+  push:
+    paths:
+      - 'Assets/Scripts/Core/**'
+      - 'Assets/Tests/EditMode/**'
+      - 'CoreTests/**'
+      - 'CloudCode/**'
+      - '.github/workflows/core.yml'
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: '시뮬레이션 판수 (무한 모드·PvP)'
+        default: '30'
+      stage_runs:
+        description: '캠페인 스테이지당 판수'
+        default: '20'
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  RUNS: ${{ inputs.runs || '30' }}
+  STAGE_RUNS: ${{ inputs.stage_runs || '20' }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Core tests (Assets/Tests/EditMode)
+        run: dotnet test CoreTests/Tests --logger "console;verbosity=normal"
+      - name: Cloud Code tests
+        run: dotnet test CloudCode/Tests --logger "console;verbosity=normal"
+
+  sim:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: endless
+            args: '$RUNS'
+          - name: stages
+            args: 'stages $STAGE_RUNS'
+          - name: pvp
+            args: 'pvp $RUNS'
+          - name: prices
+            args: 'prices'
+          - name: fingerprint
+            args: 'fingerprint'
+          - name: bench
+            args: 'bench 3 0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build simulator
+        run: dotnet build -c Release CoreTests/Sim
+      - name: Run ${{ matrix.name }}
+        run: |
+          eval "dotnet run -c Release --no-build --project CoreTests/Sim -- ${{ matrix.args }}" | tee sim-${{ matrix.name }}.txt
+          {
+            echo "### ${{ matrix.name }}"
+            echo '```'
+            cat sim-${{ matrix.name }}.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sim-${{ matrix.name }}
+          path: sim-${{ matrix.name }}.txt
