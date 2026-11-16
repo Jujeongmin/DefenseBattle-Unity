@@ -48,7 +48,7 @@ namespace DefenseBattle.Core
             Game = new Game(new GameOptions
             {
                 Mode = GameMode.Pvp, Seed = seed, UseResearch = true, Research = research, Track = false,
-                Deck = deck, AtkMult = BotProfile.AtkMult(skill, trophies), AttackDeck = BotProfile.AttackDeck(trophies, r), UnitLevels = levels,
+                Deck = deck, AtkMult = BotProfile.AtkMult(trophies), AttackDeck = BotProfile.AttackDeck(trophies, r), UnitLevels = levels,
                 RandomSeed = (int)(r.Next() * int.MaxValue) + 1,
             });
             Ai = new BotPlayer(Game, skill, r);

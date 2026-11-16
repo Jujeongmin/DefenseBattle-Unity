@@ -110,8 +110,11 @@ namespace DefenseBattle.Core.Tests
             Assert.AreEqual(0.85, BotProfile.Skill(5000, 5, 5, 4, 0));
             Assert.AreEqual(0, BotProfile.Research(1500, 2)[ResearchKey.Atk]);
             Assert.AreEqual(20, BotProfile.Research(1500, 3)[ResearchKey.Atk]);
-            Assert.AreEqual(0.6 + 0.85 * 0.5, BotProfile.AtkMult(0.85, 1350), 1e-12); // 1350 까지는 실력만
-            Assert.AreEqual(0.6 + 0.85 * 0.5 + 0.4, BotProfile.AtkMult(0.85, 2350), 1e-12); // pvp.ts botAtkMult: 1000 트로피마다 +0.4
+            Assert.AreEqual(0.85, BotProfile.AtkMult(0), 1e-12);    // 초반: 사람보다 조금 약하게
+            Assert.AreEqual(0.925, BotProfile.AtkMult(450), 1e-12);
+            Assert.AreEqual(1.0, BotProfile.AtkMult(900), 1e-12);   // 900 부터 사람과 같고
+            Assert.AreEqual(1.0, BotProfile.AtkMult(3000), 1e-12);  // 더 오르지 않는다
+            Assert.AreEqual(10, BotProfile.Research(300, 3)[ResearchKey.Atk]); // 600 트로피에서 연구 MAX
             Assert.AreEqual(40, BotProfile.TrophyDelta(true, 5, 100));
             Assert.AreEqual(-7, BotProfile.TrophyDelta(false, 0, 7));
             var r = new SystemRandom(1);

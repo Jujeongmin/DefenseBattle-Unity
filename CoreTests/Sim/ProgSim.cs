@@ -18,6 +18,11 @@ static class ProgSim
     const int GachaReserve = 400;    // progsim.ts GACHA_RESERVE - 이만큼 넘는 보석은 뽑기에 쓴다
     static readonly int[] s_marks = { 300, 550, 850, 1200, 1500, 2000 };
 
+    /// <summary>대전 승률을 나눠 볼 트로피 구간 (시작 트로피 기준)</summary>
+    static readonly int[] Bands = { 0, 300, 600, 900, 1500, 2500 };
+    static int BandOf(int t) { int b = 0; for (int i = 0; i < Bands.Length; i++) if (t >= Bands[i]) b = i; return b; }
+    static string BandName(int i) => i + 1 < Bands.Length ? $"{Bands[i]}~{Bands[i + 1] - 1}" : $"{Bands[i]}+";
+
     static int NextInt(IRandom r) => SystemRandom.Index(r, int.MaxValue - 1) + 1;
 
     sealed class Run
@@ -31,6 +36,7 @@ static class ProgSim
         public readonly HashSet<Job> Seen = new HashSet<Job>();
         public double CampaignSec, PvpSec;
         public int Stages, StageFails;
+        public readonly int[] BandWins = new int[Bands.Length], BandGames = new int[Bands.Length];
 
         public EconContext Ctx() => new EconContext(T0 + (long)(Clock * 1000), Rng);
         public string At => $"{Clock / 3600:F1}h";
@@ -62,6 +68,9 @@ static class ProgSim
             List<double> v = all.Where(r => r.Milestones.ContainsKey(k)).Select(r => r.Milestones[k]).OrderBy(x => x).ToList();
             Console.WriteLine($"{k,-24} 평균 {v.Average(),5:F1}h  중앙 {v[v.Count / 2],5:F1}h  범위 {v[0]:F1}~{v[v.Count - 1]:F1}h  미도달 {runs - v.Count}");
         }
+        Console.WriteLine("트로피 구간별 대전 승률 (전원 합산): " + string.Join("  ", Enumerable.Range(0, Bands.Length)
+            .Where(i => all.Sum(r => r.BandGames[i]) > 0)
+            .Select(i => $"{BandName(i)} {(int)Math.Round(all.Sum(r => r.BandWins[i]) * 100.0 / all.Sum(r => r.BandGames[i]))}%({all.Sum(r => r.BandGames[i])}판)")));
         Console.WriteLine($"캠페인 실패율 평균 {all.Average(r => r.StageFails * 100.0 / Math.Max(1, r.Stages)):F0}%  · 끝 트로피 평균 {all.Average(r => r.E.Pvp.Trophies):F0}");
     }
 
@@ -100,6 +109,9 @@ static class ProgSim
             {
                 int before = r.E.Pvp.Trophies;
                 bool won = PlayPvp(r, skill);
+                int band = BandOf(before);
+                r.BandGames[band]++;
+                if (won) r.BandWins[band]++;
                 int h = (int)(r.Clock / 3600);
                 hourly.TryGetValue(h, out (int w, int l) x);
                 hourly[h] = won ? (x.w + 1, x.l) : (x.w, x.l + 1);

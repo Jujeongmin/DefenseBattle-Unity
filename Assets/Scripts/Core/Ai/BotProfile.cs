@@ -21,10 +21,13 @@ namespace DefenseBattle.Core
             return Math.Max(0.05, Math.Min(0.85, b + adj));
         }
 
-        /// <summary>봇 연구 레벨: 트로피에 맞춰 (1500 트로피에서 최대). 첫 3판은 연구 없음</summary>
+        /// <summary>
+        /// 봇 연구 레벨: 트로피에 맞춰 (ResearchFullAt 트로피에서 최대). 첫 3판은 연구 없음.
+        /// 원본(pvp.ts botResearch)은 1500 에서 최대 - 사람은 2~3시간이면 연구 MAX 인데 봇은 한참 뒤라 초반 봇이 너무 약했다 (2026-11-16 조정).
+        /// </summary>
         public static Dictionary<ResearchKey, int> Research(int trophies, int gamesPlayed)
         {
-            double k = gamesPlayed < 3 ? 0 : Math.Min(1, Math.Max(0, trophies) / 1500.0);
+            double k = gamesPlayed < 3 ? 0 : Math.Min(1, Math.Max(0, trophies) / (double)ResearchFullAt);
             var d = new Dictionary<ResearchKey, int>();
             foreach (ResearchDef r in Core.Research.All) d[r.Key] = (int)Math.Floor(r.Max * k);
             return d;
@@ -38,9 +41,18 @@ namespace DefenseBattle.Core
             return Math.Max(1, JsMath.RoundInt(sum / Math.Max(1, myDeck.Count)));
         }
 
-        /// <summary>봇 유닛 공격력 배수: 약한 봇일수록 낮다 (0.05 → 0.62, 0.3 → 0.75, 0.85 → 1.0)</summary>
-        // 1350 트로피부터는 1000 트로피마다 +0.4 더 (pvp.ts botAtkMult)
-        public static double AtkMult(double skill, int trophies = 0) => 0.6 + skill * 0.5 + Math.Max(0, trophies - 1350) / 1000.0 * 0.4;
+        /// <summary>봇 연구가 MAX 가 되는 트로피</summary>
+        public const int ResearchFullAt = 600;
+        /// <summary>봇 공격력 배수: 트로피 0 에서 AtkMin, AtkFullAt 트로피부터 1.0 (사람과 같음)에서 멈춘다</summary>
+        public const double AtkMin = 0.85;
+        public const int AtkFullAt = 900;
+
+        /// <summary>
+        /// 봇 유닛 공격력 배수: 초반엔 사람보다 조금 약하고 (0.85) 900 트로피부터 사람과 같다 (1.0, 상한).
+        /// 원본(pvp.ts botAtkMult = 0.6 + 실력×0.5 + 1350 넘는 트로피 1000당 +0.4)은 초반엔 0.65 로 너무 약하고
+        /// 1500 트로피부터는 사람보다 강해져 끝없이 올라갔다 (2026-11-16 조정).
+        /// </summary>
+        public static double AtkMult(int trophies) => AtkMin + (1 - AtkMin) * Math.Min(1, Math.Max(0, trophies) / (double)AtkFullAt);
 
         /// <summary>봇 덱: 그 트로피의 사람이 가졌을 법한 유닛 (기본·로드 해금 + 등급별 트로피 기준: 희귀 80, 영웅 300, 전설 800)</summary>
         public static List<Job> Deck(int trophies, IRandom rand)
