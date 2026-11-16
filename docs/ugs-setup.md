@@ -19,7 +19,7 @@
    `starter_pack`, `monthly_pass`, `ad_remove`, `season_premium`, `gold_booster_pack`,
    `offer_comeback`, `offer_arena`, `offer_chapter`, `unit_ranger`, `unit_frost`, `unit_paladin`, `unit_bomber`, `unit_assassin`,
    `chest_gold`, `chest_magic`, `chest_legend`, `crystal_100`, `crystal_550`, `crystal_1200`, `crystal_2600`, `crystal_7000`, `crystal_15000`
-3. **수익 창출 설정 → 라이선스**: "Base64 인코딩 RSA 공개 키"를 복사해 둔다 → 4-5 Economy 에 넣는다.
+3. **수익 창출 설정 → 라이선스**: "Base64 인코딩 RSA 공개 키"를 복사해 둔다 → 4-4 Cloud Code Secrets 에 넣는다.
 4. **Play 게임즈 서비스 → 설정**: 새 게임 만들기 → OAuth 동의 화면 → 사용자 인증 정보:
    - Android 클라이언트 (패키지명 + 업로드 키 SHA-1)
    - **웹 애플리케이션** 클라이언트 → 클라이언트 ID·보안 비밀 → 4-2 UGS 에 넣는다
@@ -37,22 +37,21 @@
 ## 4. Unity Gaming Services (대시보드)
 진행 (2026-11-16): Cloud Save 동작 확인(EconSync 호출 성공), Relay 사용 가능, 리더보드 `trophies` 생성(높은 순, Latest score, 리셋 없음),
 Cloud Code 모듈 `DefenseBattleCloud` 배포 완료 (에디터 메뉴 **Tools → Defense Battle → Deploy Cloud Code**).
-남은 것: 2번 Google Play 로그인 (Play Console 1-4 이후). **4번 Economy 는 쓸 수 없다** - Unity 가 새 프로젝트의 Economy 가입을 받지 않는다
-("Economy is no longer accepting new project signups"). 영수증 검증을 다른 방법으로 바꿔야 한다 (결정 대기).
+남은 것 (Play Console 이후, 사용자): 2번 Google Play 로그인, 4번 라이선스 키 Secret.
+Economy 는 쓰지 않는다 - Unity 가 새 프로젝트의 Economy 가입을 받지 않는다 ("Economy is no longer accepting new project signups").
+대신 Cloud Code 가 영수증 서명을 직접 검사한다 (`CloudCode/Module/Logic/GooglePlayReceiptVerifier.cs`).
 
 1. **Cloud Save / Relay**: 켜기만 하면 된다 (별도 설정 없음).
 2. **Authentication → Identity providers → Google Play Games**: 1-4 의 웹 클라이언트 ID·보안 비밀 입력.
 3. **Leaderboards**: 새 리더보드
    - ID `trophies`, 정렬 높은 순, **업데이트 방식: 마지막 점수 유지(Keep latest)** - 트로피는 내려가기도 해서 '최고 점수'로 하면 안 된다.
-4. **Economy**:
-   - 통화 하나 만들기: ID `PURCHASE_TOKEN` (영수증 검증용 자리표시 - 게임에서 안 씀)
-   - **실제 결제(Real money purchases)**: 1-2 의 상품마다 하나씩. Economy ID = 상품 ID 대문자 (`CRYSTAL_550` …),
-     Google Play 상품 ID = 원래 상품 ID (`crystal_550` …), 보상 = `PURCHASE_TOKEN` 1개.
-     실제 지급(보석·상자·유닛)은 서버 코드(`EconRules.GrantProduct`)가 하고, Economy 는 영수증 진위 확인만 한다.
-   - 설정 → Google Play 라이선스 키: 1-3 의 공개 키 입력.
-   - 다 만든 뒤 **Publish**.
+4. **Cloud Code → Secrets**: 새 Secret `GOOGLE_PLAY_LICENSE_KEY` = 1-3 의 "Base64 인코딩 RSA 공개 키" (붙여 넣기만, 저장소에 커밋하지 않는다).
+   서버가 이 키로 영수증 서명을 확인하고, 패키지명·상품 id·구매 완료 상태, 그리고 `obfuscatedAccountId` 가 그 플레이어의
+   `PurchaseTag.ForPlayer(플레이어 id)` 인지 본다 (기기는 결제할 때 이 값을 넣어야 한다 - 5단계 클라이언트 작업).
+   키가 없으면 모든 결제가 거절된다. 환불·취소는 알 수 없다 (필요하면 나중에 Play Developer API 로 보강).
 5. **Cloud Code**: 모듈은 Unity 에디터에서 배포한다 (PC 작업).
-   - Package Manager 에 `Cloud Code`, `Deployment` 패키지 설치 → **Window → Deployment** → `Assets/CloudCode/DefenseBattleCloud.ccmr` 선택 → Deploy.
+   - 에디터 메뉴 **Tools → Defense Battle → Deploy Cloud Code** (또는 Services → Deployment 창에서 `DefenseBattleCloud.ccmr` Deploy).
+     dotnet 경로가 안 잡히면 Preferences → Cloud Code 에서 `C:\Program Files\dotnet\dotnet.exe` 지정.
    - 모듈 소스: `CloudCode/Module` (게임 규칙은 클라이언트와 같은 `Assets/Scripts/Core` 를 그대로 컴파일).
 
 ## 5. 확인

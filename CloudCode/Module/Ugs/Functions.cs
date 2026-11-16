@@ -26,7 +26,7 @@ namespace DefenseBattle.Server.Ugs
         GameServer Server(IExecutionContext ctx)
         {
             INotifier notifier = m_push != null ? new UgsNotifier(m_push, ctx) : (INotifier)new NoNotifier();
-            return new GameServer(new UgsStore(m_api, ctx), new SystemClock(), notifier, new UgsRankBoard(m_api, ctx), new UgsReceiptVerifier(m_api, ctx));
+            return new GameServer(new UgsStore(m_api, ctx), new SystemClock(), notifier, new UgsRankBoard(m_api, ctx), new GooglePlayReceiptVerifier(PurchaseTag.PackageName, () => UgsLicenseKey.Load(m_api, ctx)));
         }
 
         static string Me(IExecutionContext ctx) => ctx.PlayerId ?? throw new InvalidOperationException("player only");

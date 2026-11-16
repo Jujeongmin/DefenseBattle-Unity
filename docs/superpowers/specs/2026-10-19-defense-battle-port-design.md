@@ -19,7 +19,7 @@ RandomDefense-Unity 를 웹판 **디펜스 배틀**(`../DefenseBattle`, TypeScri
 
 ### 사용자가 할 일 (계정 필요)
 `docs/ugs-setup.md` 에 순서대로: Play Console 새 앱·인앱 상품·Play 게임즈 OAuth, AdMob 새 앱·보상형 3개, Unity Cloud 프로젝트 연결,
-UGS(Google Play 로그인·리더보드 `trophies`·Economy 영수증 검증 항목), Cloud Code 모듈 배포, 원화 가격 확정.
+UGS(Google Play 로그인·Cloud Code Secret `GOOGLE_PLAY_LICENSE_KEY`), 원화 가격 확정. (리더보드·Cloud Code 배포는 2026-11-16 완료)
 
 ## 원칙
 
@@ -113,9 +113,9 @@ PvP 동기화 모델은 원본과 같다: **각 클라이언트가 자기 전장
 | 2 ~ 4, 6, 7 | 시작 전 (2단계부터는 에디터 작업 - PC 의 Claude Code + MCP) |
 
 ### 5단계 서버 결과 (`CloudCode/`, UGS Cloud Code C# 모듈 `DefenseBattleCloud`)
-- 구조: `Module/Logic` (UGS 와 무관한 서버 로직 `GameServer` - 저장소·시계·알림·랭킹·영수증을 인터페이스로) + `Module/Ugs` (Cloud Save·푸시·Leaderboards·Economy 어댑터, `[CloudCodeFunction]` 진입점) + `Tests` (메모리 저장소로 원본 서버 테스트 이식).
+- 구조: `Module/Logic` (UGS 와 무관한 서버 로직 `GameServer` - 저장소·시계·알림·랭킹·영수증을 인터페이스로) + `Module/Ugs` (Cloud Save·푸시·Leaderboards·Secrets 어댑터, `[CloudCodeFunction]` 진입점) + `Tests` (메모리 저장소로 원본 서버 테스트 이식).
 - 저장: 경제·기록은 플레이어 **Protected** 데이터(기기는 읽기만), 대기열·경기는 Private Custom 데이터 `defensebattle`. 쓰기는 Cloud Save 쓰기 잠금 + 충돌 시 재시도.
-- 원본과 다르게 한 것: ① 덱 편성을 서버가 확인(`SetDecks` - 가진 유닛·열린 카드만). ② 결제는 스토어 영수증 검증(Economy) 후 지급, 주문 id 로 한 번만 (검증은 됐는데 지급 기록이 없으면 다시 지급해 복구). ③ 실시간 중계는 서버 대신 Relay(P2P) - 서버는 매칭·시작 시각·이탈 판정(마지막 응답 20초)·결과만. ④ 대전 결과 지급은 경기 id 로 한 번만.
+- 원본과 다르게 한 것: ① 덱 편성을 서버가 확인(`SetDecks` - 가진 유닛·열린 카드만). ② 결제는 스토어 영수증 검증 후 지급, 주문 id 로 한 번만. 검증은 Cloud Code 가 Play 라이선스 키로 서명을 직접 확인하고 `obfuscatedAccountId`(=`PurchaseTag`)로 플레이어에 묶는다 (UGS Economy 는 새 프로젝트를 받지 않아 2026-11-16 교체) (검증은 됐는데 지급 기록이 없으면 다시 지급해 복구). ③ 실시간 중계는 서버 대신 Relay(P2P) - 서버는 매칭·시작 시각·이탈 판정(마지막 응답 20초)·결과만. ④ 대전 결과 지급은 경기 id 로 한 번만.
 - **원본에서 찾은 버그 2개** (이식판에는 없음, 원본 수정은 별도 작업으로 제안함): 서버가 몹 카드 번호를 0~9 로 잘라 10~15번 카드가 상대에게 마왕으로 도착함 / 대기열 하트비트가 '기다린 시간'을 0 으로 되돌려 대기할수록 트로피 허용 폭이 넓어지는 규칙이 동작하지 않음.
 
 ### 1단계 결과 (`Assets/Scripts/Core`, 순수 C#, `DefenseBattle.Core` 어셈블리)
