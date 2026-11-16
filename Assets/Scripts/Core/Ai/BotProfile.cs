@@ -39,7 +39,8 @@ namespace DefenseBattle.Core
         }
 
         /// <summary>봇 유닛 공격력 배수: 약한 봇일수록 낮다 (0.05 → 0.62, 0.3 → 0.75, 0.85 → 1.0)</summary>
-        public static double AtkMult(double skill) => 0.6 + skill * 0.5;
+        // 1350 트로피부터는 1000 트로피마다 +0.4 더 (pvp.ts botAtkMult)
+        public static double AtkMult(double skill, int trophies = 0) => 0.6 + skill * 0.5 + Math.Max(0, trophies - 1350) / 1000.0 * 0.4;
 
         /// <summary>봇 덱: 그 트로피의 사람이 가졌을 법한 유닛 (기본·로드 해금 + 등급별 트로피 기준: 희귀 80, 영웅 300, 전설 800)</summary>
         public static List<Job> Deck(int trophies, IRandom rand)

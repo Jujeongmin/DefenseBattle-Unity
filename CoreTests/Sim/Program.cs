@@ -213,7 +213,7 @@ static class Program
         var a = new Game(new GameOptions { Mode = GameMode.Pvp, Seed = seed, UseResearch = false, Track = false, Deck = deck,
             UnitLevels = deck.ToDictionary(j => j, j => levels), RandomSeed = s_seeds.Next(1, int.MaxValue) });
         var b = new Game(new GameOptions { Mode = GameMode.Pvp, Seed = seed, UseResearch = false, Track = false, Deck = bDeck,
-            AtkMult = BotProfile.AtkMult(botSkill), AttackDeck = BotProfile.AttackDeck(trophies, rand),
+            AtkMult = BotProfile.AtkMult(botSkill, trophies), AttackDeck = BotProfile.AttackDeck(trophies, rand),
             UnitLevels = bDeck.ToDictionary(j => j, j => levels), RandomSeed = s_seeds.Next(1, int.MaxValue) });
         a.AttackSent += p => b.ReceiveAttack(p);
         b.AttackSent += p => a.ReceiveAttack(p);
