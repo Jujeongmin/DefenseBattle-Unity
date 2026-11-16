@@ -23,6 +23,9 @@ namespace DefenseBattle.View
         [SerializeField] ShapeBatch m_top;
         /// <summary>스프라이트용 Unlit 머티리얼 (2D 조명 없이 그대로 보이게)</summary>
         [SerializeField] Material m_spriteMaterial;
+        /// <summary>피격 흰 번쩍임 (가산 합성)</summary>
+        [SerializeField] Material m_flashMaterial;
+        [SerializeField] ActorViews m_actors;
 
         readonly List<double> m_steps = new List<double>(8);
 
@@ -44,6 +47,7 @@ namespace DefenseBattle.View
         void Start()
         {
             m_board.Init(m_catalog);
+            m_actors.Init(m_catalog, m_spriteMaterial, m_flashMaterial);
             StartGame(BattleLaunch.Current);
         }
 
@@ -54,6 +58,7 @@ namespace DefenseBattle.View
             Game = new Game(launch.MakeOptions());
             Game.GameEnded += OnGameEnded;
             m_board.ResetState();
+            m_actors.ResetState();
             GameStarted?.Invoke(Game);
         }
 
@@ -83,6 +88,7 @@ namespace DefenseBattle.View
             m_over.Begin();
             m_top.Begin();
             m_board.Draw(Game, AnimTime, m_under);
+            m_actors.Draw(Game, AnimTime, m_under, m_mobOver, m_over);
             m_under.End();
             m_mobOver.End();
             m_over.End();

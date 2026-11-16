@@ -34,6 +34,9 @@ public static class BattleSceneBuilder
         cam.clearFlags = CameraClearFlags.SolidColor;
         cam.backgroundColor = new Color32(0x1d, 0x1b, 0x2e, 255);
         cam.transform.position = new Vector3(0, 0, -10);
+        // 같은 정렬 순서 안에서는 아래쪽(앞)에 있는 스프라이트가 위에 그려지게
+        cam.transparencySortMode = TransparencySortMode.CustomAxis;
+        cam.transparencySortAxis = new Vector3(0, 1, 0);
         camGo.AddComponent<AudioListener>();
 
         // 전장
@@ -49,6 +52,10 @@ public static class BattleSceneBuilder
         ShapeBatch mobOver = Batch(board.transform, "MobOver", unlit, 11);
         ShapeBatch over = Batch(board.transform, "Over", unlit, 30);
         ShapeBatch top = Batch(board.transform, "Top", unlit, 40);
+        var actorsGo = new GameObject("Actors");
+        actorsGo.transform.SetParent(board.transform, false);
+        var actors = actorsGo.AddComponent<ActorViews>();
+        Material flash = FlashMaterial();
 
         // UI
         new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
@@ -68,10 +75,24 @@ public static class BattleSceneBuilder
         Set(runner, "m_over", over);
         Set(runner, "m_top", top);
         Set(runner, "m_spriteMaterial", unlit);
+        Set(runner, "m_flashMaterial", flash);
+        Set(runner, "m_actors", actors);
 
         EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), ScenePath);
         AddToBuildSettingsFirst(ScenePath);
         Debug.Log("[BattleScene] " + ScenePath + " 저장");
+    }
+
+    /// <summary>피격 번쩍임: 같은 프레임을 가산(SrcAlpha One)으로 겹친다 (render.ts globalCompositeOperation 'lighter')</summary>
+    static Material FlashMaterial()
+    {
+        const string path = "Assets/Art/DefenseBattle/Generated/FlashAdditive.mat";
+        var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+        if (mat != null) return mat;
+        mat = new Material(Shader.Find("Legacy Shaders/Particles/Additive")) { name = "FlashAdditive" };
+        mat.SetColor("_TintColor", new Color(0.5f, 0.5f, 0.5f, 0.5f)); // 기본값: 정점 색 × 텍스처 그대로
+        AssetDatabase.CreateAsset(mat, path);
+        return mat;
     }
 
     static ShapeBatch Batch(Transform parent, string name, Material mat, int order)
