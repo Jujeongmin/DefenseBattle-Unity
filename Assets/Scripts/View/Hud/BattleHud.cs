@@ -56,6 +56,7 @@ namespace DefenseBattle.View
         Race m_lastRace = (Race)(-1);
         long m_mergeMask = -1;
         float m_progress = -1;
+        bool m_progressBright;
         int m_logCount = -1;
         LogEntry m_logFirst, m_logLast;
         float m_goldFlash;
@@ -138,8 +139,12 @@ namespace DefenseBattle.View
                 m_progressFill.anchorMax = new Vector2(pct, 1);
             }
             // 70% 이상: 0.6초 주기로 밝게 깜빡 (style.css warnBlink)
-            Color32 fill = pct >= 0.7f && Time.unscaledTime % 0.6f < 0.3f ? RedBright : Red;
-            if (!m_progressFillImage.color.Equals((Color)fill)) m_progressFillImage.color = fill;
+            bool bright = pct >= 0.7f && Time.unscaledTime % 0.6f < 0.3f;
+            if (bright != m_progressBright)
+            {
+                m_progressBright = bright;
+                m_progressFillImage.color = bright ? RedBright : Red;
+            }
             int n = CharText.PutInt(m_buf, 0, mobs);
             n = CharText.Put(m_buf, n, " / ");
             m_progressText.Set(m_buf, CharText.PutInt(m_buf, n, Waves.GameOverMobCount));

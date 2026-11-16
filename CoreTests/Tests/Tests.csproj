@@ -11,7 +11,8 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="../../Assets/Tests/EditMode/**/*.cs" />
+    <!-- View/ 는 Unity 전용 (UnityEngine 필요) - Unity Test Runner 에서만 -->
+    <Compile Include="../../Assets/Tests/EditMode/**/*.cs" Exclude="../../Assets/Tests/EditMode/View/**" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />

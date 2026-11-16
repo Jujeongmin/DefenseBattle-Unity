@@ -92,13 +92,24 @@ namespace DefenseBattle.View
 
         void OnGameEnded(GameOverData d) => GameOver?.Invoke(d);
 
+#if UNITY_EDITOR
+        /// <summary>에디터 측정용: 지난 프레임 진행+그리기+HUD 에서 할당한 바이트 (에디터 자체 할당 제외)</summary>
+        public static long LastFrameAlloc;
+#endif
+
         void Update()
         {
             if (Game == null) return;
+#if UNITY_EDITOR
+            long before = GC.GetAllocatedBytesForCurrentThread();
+#endif
             BattleClock.Steps(Time.deltaTime, Waves.PlaySpeed, m_steps);
             for (int i = 0; i < m_steps.Count; i++) Game.Update(m_steps[i]);
             AnimTime = Time.time * Waves.PlaySpeed;
             Draw();
+#if UNITY_EDITOR
+            LastFrameAlloc = GC.GetAllocatedBytesForCurrentThread() - before;
+#endif
         }
 
         void LateUpdate()
