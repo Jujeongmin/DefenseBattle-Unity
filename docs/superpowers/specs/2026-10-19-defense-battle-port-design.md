@@ -107,8 +107,8 @@ PvP 동기화 모델은 원본과 같다: **각 클라이언트가 자기 전장
 
 | 단계 | 상태 |
 | --- | --- |
-| 0. 세팅 | 일부 - MCP 연결, 앱 정보, 에셋 복사(그림 336·소리 20·폰트 TTF 5) + 임포트 자동 설정 완료. UGS 대시보드·패키지 추가는 남음 |
-| 1. Core 이식 | **완료 (2026-10-19)** - 아래 검증 결과 |
+| 0. 세팅 | 거의 완료 - MCP 연결, 앱 정보, 에셋 복사(그림 336·소리 20·폰트 TTF 5) + 임포트 자동 설정, 패키지 추가(2026-11-16: Test Framework 1.6.0, Authentication 3.9.0, Cloud Save 3.4.2, Cloud Code 2.10.4, Leaderboards 2.3.5, Multiplayer 2.4.1, Netcode for GameObjects 2.14.0), 로그인 코드 `Scripts/Services/UgsSession` 완료. **남은 것: Unity Cloud 프로젝트 연결(`docs/ugs-setup.md` 3번, 사용자)** - 지금은 `UnityProjectNotLinkedException` 으로 로그인 실패, 연결 뒤 빈 씬 + `UgsLoginProbe` 로 성공 로그 확인 |
+| 1. Core 이식 | **완료 (2026-10-19)** - 아래 검증 결과. Unity 에디터 Test Runner 에서도 EditMode 60개 통과 확인 (2026-11-16, 할당 측정 1개는 .NET 쪽에서만 재서 Ignore) |
 | 5. UGS 연동 | **서버 쪽 완료 (2026-10-19)** - Cloud Code 모듈 + 서버 테스트 33개. 클라이언트 연결(로그인·호출·푸시 구독)은 남음 |
 | 2 ~ 4, 6, 7 | 시작 전 (2단계부터는 에디터 작업 - PC 의 Claude Code + MCP) |
 
@@ -125,7 +125,8 @@ PvP 동기화 모델은 원본과 같다: **각 클라이언트가 자기 전장
   밸런스 시뮬(각 100판, 연구 0 → MAX 평균 도달 웨이브): 원본 39 / 44.5 / 46.6 / 49.3 / 50, C# 39.1 / 44.5 / 46.3 / 49.4 / 49.9. 캠페인 30스테이지 클리어율도 같은 결과(거의 전부 100%). PvP 한 판 길이 2.4~4.2분으로 원본과 같음.
 - 최적화: 몹·이펙트·불 장판 오브젝트 풀링, 전투 루프의 LINQ·임시 컬렉션·람다 캡처 제거, 표적 탐색·범위 판정을 제곱 거리로, 길 표본·공격 카드 목록 미리 계산.
   결과: 전투 1프레임 약 4~6µs, 할당 프레임당 0.2바이트(사실상 0). 최적화 전후 시드 고정 40판 결과가 완전히 같음(`Sim fingerprint`).
-- Unity 확인 필요(PC): 에디터에서 컴파일 에러 0, Package Manager 에 Test Framework 추가 후 Test Runner 에서 EditMode 테스트 통과.
+- Unity 확인(2026-11-16): 에디터 컴파일 에러 0, Test Runner EditMode 60 통과 / 1 Ignore.
+- 참고: 패키지 추가 때 전체 재임포트가 돌면서 옛 게임의 `Assets/GData/Prefabs/Effect/*.prefab` 이 "Problem detected while importing" 에러를 낸다 (지워진 `Assets/Down/` 팩 참조). 옛 매니저·프리팹은 새 씬 확인 후 지울 대상.
 
 ## 단계
 
