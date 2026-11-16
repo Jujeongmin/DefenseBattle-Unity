@@ -8,14 +8,14 @@ using UnityEngine.UI;
 /// <summary>
 /// Battle.unity 만들기 (Tools → Defense Battle → Build Battle Scene). 씬 YAML 을 손으로 고치지 않고 이 스크립트로 다시 만든다.
 /// 원본 index.html #game-frame 순서: 상단바 / 전장 / 진행 바 / 하단 조작부 (기준 해상도 720×1280).
-/// 캔버스 3개: HudStatic(프레임·버튼) / HudDynamic(바뀌는 글자) / Overlay(패널) - 같은 칸 배치를 둘 다 가진다.
+/// 캔버스: Hud(상단바·전장 칸·진행 바·조작부, 바뀌는 묶음은 중첩 Canvas) / Overlay(패널).
 /// </summary>
 public static class BattleSceneBuilder
 {
     public const string ScenePath = "Assets/Scenes/Battle.unity";
 
     /// <summary>기준 해상도 단위 칸 높이 (720×1280)</summary>
-    public const float TopBarH = 92, ProgressH = 32, ControlsH = 300;
+    public const float TopBarH = 104, ProgressH = 44, ControlsH = 376;
 
     [MenuItem("Tools/Defense Battle/Build Battle Scene")]
     public static void Build()
@@ -63,8 +63,8 @@ public static class BattleSceneBuilder
 
         // UI
         new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
-        RectTransform staticSafe = Canvas("HudStatic", 0, true);
-        Canvas("HudDynamic", 1, false);
+        // 자주 바뀌는 HUD 묶음은 Hud 안의 중첩 Canvas 로 분리한다 (BattleHudBuilder)
+        RectTransform staticSafe = Canvas("Hud", 0, true);
         Canvas("Overlay", 10, true);
         RectTransform boardArea = (RectTransform)staticSafe.Find("BoardArea");
 
@@ -84,6 +84,8 @@ public static class BattleSceneBuilder
         Set(runner, "m_effects", effects);
         Set(runner, "m_texts", texts);
         Set(runner, "m_boardRoot", board.transform);
+
+        BattleHudBuilder.Build(staticSafe, runner, catalog);
 
         EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), ScenePath);
         AddToBuildSettingsFirst(ScenePath);
