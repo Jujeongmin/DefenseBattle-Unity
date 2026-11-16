@@ -255,6 +255,13 @@ static class Program
             foreach (ProductDef p in Products.All) Console.WriteLine($"{p.Id,-20} {p.Krw,8:N0}원 효율 {Products.Efficiency(p)}%");
             return;
         }
+        if (args.Length > 0 && args[0] == "prog")
+        {
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            ProgSim.RunAll(args.Length > 1 ? args[1] : "both", args.Length > 2 ? double.Parse(args[2], inv) : 0.35,
+                args.Length > 3 ? double.Parse(args[3], inv) : 8, args.Length > 4 ? int.Parse(args[4]) : 1);
+            return;
+        }
         if (args.Length > 0 && args[0] == "bench") { Bench(args.Length > 1 ? int.Parse(args[1]) : 3, args.Length > 2 ? int.Parse(args[2]) : 20); return; }
         string mode = args.Length > 0 ? args[0] : "sweep";
         if (mode == "fingerprint") { Fingerprint(args.Length > 1 ? int.Parse(args[1]) : 40); return; }

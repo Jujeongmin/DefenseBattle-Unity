@@ -57,6 +57,15 @@ jobs:
             args: 'fingerprint'
           - name: bench
             args: 'bench 3 0'
+          # 진행 시뮬 (원본 progsim.ts): prog [both|pvp] [실력] [시간] [인원]
+          - name: prog-both
+            args: 'prog both 0.35 8 10'
+          - name: prog-pvp
+            args: 'prog pvp 0.35 8 10'
+          - name: prog-both-skilled
+            args: 'prog both 0.55 8 10'
+          - name: prog-long
+            args: 'prog both 0.35 60 5'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
