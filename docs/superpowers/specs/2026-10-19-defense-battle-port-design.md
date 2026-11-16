@@ -110,7 +110,7 @@ PvP 동기화 모델은 원본과 같다: **각 클라이언트가 자기 전장
 | 0. 세팅 | **완료 (2026-11-16)** - MCP 연결, 앱 정보, 에셋 복사(그림 336·소리 20·폰트 TTF 5) + 임포트 자동 설정, 패키지 추가(Test Framework 1.6.0, Authentication 3.9.0, Cloud Save 3.4.2, Cloud Code 2.10.4, Leaderboards 2.3.5, Multiplayer 2.4.1, Netcode for GameObjects 2.14.0), Unity Cloud 프로젝트 "Defense Battle"(`8dad958b-a0aa-45ae-852d-40249312c36d`, 환경 `production`) 연결, 빈 씬 + `UgsLoginProbe` 로 익명 로그인 성공 로그 확인. UGS 대시보드 나머지(`docs/ugs-setup.md` 4번)는 사용자 작업으로 남음 |
 | 1. Core 이식 | **완료 (2026-10-19)** - 아래 검증 결과. Unity 에디터 Test Runner 에서도 EditMode 60개 통과 확인 (2026-11-16, 할당 측정 1개는 .NET 쪽에서만 재서 Ignore) |
 | 5. UGS 연동 | **서버 쪽 완료 (2026-10-19)** - Cloud Code 모듈 + 서버 테스트 33개. 클라이언트 연결(로그인·호출·푸시 구독)은 남음 |
-| 2. 전투 화면 | **완료 (2026-11-16)** - `Assets/Scenes/Battle.unity` (빌더: Tools → Defense Battle → Build Battle Assets / Build Battle Scene). 1-1 클리어(별 3)와 무한 모드(봇 자동 플레이, 부활 1회, 웨이브 40) 끝까지 확인, 콘솔 에러 0, 진행+그리기+HUD 프레임당 할당 0B. 계획·결정 기록: `docs/superpowers/plans/2026-11-16-battle-screen.md`. 남은 것: 오디오, 튜토리얼·팁·보상(3단계), PvP 화면(4단계) |
+| 2. 전투 화면 | **완료 (2026-11-16)** - `Assets/Scenes/Battle.unity` (빌더: Tools → Defense Battle → Build Battle Assets / Build Battle Scene). 1-1 클리어(별 3)와 무한 모드(봇 자동 플레이, 부활 1회, 웨이브 40) 끝까지 확인, 콘솔 에러 0, 진행+그리기+HUD 프레임당 할당 0B. 계획·결정 기록: `docs/superpowers/plans/2026-11-16-battle-screen.md`. 오디오(효과음 16·배경음악, 원본 간격·음높이·음소거 저장)도 이식. 남은 것: 튜토리얼·팁·보상·음량 설정 화면(3단계), PvP 화면(4단계) |
 | 3 ~ 4, 6, 7 | 시작 전 |
 
 ### 5단계 서버 결과 (`CloudCode/`, UGS Cloud Code C# 모듈 `DefenseBattleCloud`)
