@@ -1,71 +1,84 @@
-# Google Play 스토어 등록 문구 초안
+# Google Play 스토어 등록 문구 초안 - 디펜스 배틀
 
-> Play Console > 스토어 등록정보에 붙여넣을 초안입니다. 자유롭게 수정하세요.
+> Play Console > 스토어 등록정보에 붙여넣을 초안. 수치는 `Assets/Scripts/Core/Config` 기준 (밸런스를 바꾸면 여기도 고친다).
+> 게임은 5개 언어(한국어·English·日本語·简体中文·繁體中文)를 지원하지만 이 문서는 한국어·영어만 있다. 나머지 3개 언어 문구는 아직 없음.
 
 ---
 
 ## 앱 이름 (30자 이내)
 
-**한국어**: 랜덤 디펜스 : 뽑기 타워 디펜스
-**English**: Random Defense: Gacha TD
+**한국어**: 디펜스 배틀: 실시간 디펜스 대전
+**English**: Defense Battle: PvP Defense
 
 ## 짧은 설명 (80자 이내)
 
 **한국어**:
-소환 버튼 하나로 시작하는 한 판의 운빨! 뽑고, 팔고, 업그레이드해서 50웨이브를 막아내세요.
+소환은 운, 승리는 판단. 유닛을 합성해 몹을 막고, 몹 카드를 던져 상대 전장을 무너뜨리세요.
 
 **English**:
-Tap to summon, pray for luck! Sell, upgrade, and survive 50 waves of monsters.
+Summon, merge, defend - then throw mob cards to break your rival's field in 1v1.
 
 ## 전체 설명 (4000자 이내)
 
 **한국어**:
 
-🎲 **소환 한 번에 인생역전!**
-버튼 하나로 마법사·궁수·전사를 랜덤 소환하세요. 일반부터 태초까지 6개 등급 — 0.1% 태초 유닛이 뜨는 순간을 노려보세요!
+소환은 운, 승리는 판단.
+버튼 한 번에 유닛이 랜덤으로 나오고, 같은 유닛 3개를 합치면 한 등급 위로 올라갑니다. 사각 링 길을 도는 몹이 100마리 쌓이기 전에 막아내세요.
 
-⚔️ **간단하지만 깊이 있는 전략**
-- 종족 상성: 궁수는 오크에, 마법사는 언데드에, 전사는 트롤에 강합니다
-- 지역 스왑: 유닛 부대를 드래그해서 배치를 바꾸세요
-- 골드 관리: 소환할수록 비용이 오릅니다. 낮은 등급은 팔아서 자금을 확보하세요
-- 자동판매: 고급 이하 등급은 자동으로 팔아주는 편의 기능
+■ 소환하고, 합치고, 배치하기
+- 일반부터 태초까지 6등급. 같은 유닛·같은 등급 3개를 합치면 한 등급 위 유닛이 됩니다.
+- 유닛은 자기 구역 앞만 지킵니다. 닿지 않는 길(빨간 구멍)이 보이면 구역을 바꿔 메우세요.
+- 직업마다 스킬이 다릅니다. 다중 사격, 범위 폭발, 빙결, 보스 특화, 처형까지 덱 4자리를 어떻게 채울지가 전략입니다.
 
-👑 **10웨이브마다 보스전**
-제한시간 안에 보스를 잡지 못하면 게임 오버! 성장하지 않으면 넘을 수 없는 벽이 기다립니다.
+■ 실시간 1:1 대전
+- 상대와 같은 웨이브를 동시에 막으면서, 몹 카드 16종 중 덱에 넣은 4장을 상대 전장으로 던집니다.
+- 골드를 방어에 쓸지 공격에 쓸지, 판단이 승패를 가릅니다.
+- 트로피를 모아 브론즈부터 마스터까지 6단계 아레나를 올라가고, 시즌 패스와 랭킹에 도전하세요.
+- 상대가 바로 없으면 봇과 연습전을 할 수 있습니다.
 
-💎 **영구 성장 (연구소)**
-게임에서 얻은 크리스탈로 공격력·골드·소환 확률을 영구히 강화하세요. 죽어도 강해져서 돌아옵니다.
+■ 유닛 32종 수집과 성장
+- 일반 8 · 희귀 10 · 영웅 8 · 전설 6, 총 32종.
+- 상자와 뽑기로 카드를 모아 유닛 레벨을 올리세요.
 
-🏆 **무한 모드 & 글로벌 랭킹**
-50웨이브 클리어가 전부가 아닙니다. 무한 모드에서 한계에 도전하고 전 세계 플레이어와 순위를 겨루세요!
+■ 혼자서도 길게
+- 캠페인: 초원의 관문, 어둠의 숲, 망자의 성채. 3챕터 × 10스테이지.
+- 무한 모드: 50웨이브 끝까지 버텨 보세요.
 
-✅ 세로 화면 한 손 플레이
-✅ 확률 정보 투명 공개
-✅ 한국어/English 지원
+■ 이런 분께
+- 세로 화면, 한 손으로 플레이합니다.
+- 한국어 · English · 日本語 · 简体中文 · 繁體中文 지원.
+- 진행 상황은 Google Play 계정에 저장되어 기기를 바꿔도 이어서 할 수 있습니다.
+- 인터넷 연결이 필요합니다.
 
 **English**:
 
-🎲 **One tap. Six rarities. Pure luck!**
-Summon random Wizards, Archers, and Warriors with a single tap. From Common to Eternal — chase that 0.1% jackpot!
+Summoning is luck. Winning is judgment.
+Tap once to summon a random unit. Merge three of the same unit to raise it a grade. Mobs march around a square ring road - stop them before 100 pile up.
 
-⚔️ **Simple but strategic**
-- Type matchups: Archers counter Orcs, Wizards counter Undead, Warriors counter Trolls
-- Region swap: drag your squads to rearrange formations
-- Economy: summon costs rise over time — sell low grades to stay afloat
-- Auto-sell: automatically sells low-grade units for you
+■ Summon, merge, place
+- Six grades from Common to Eternal. Three of the same unit at the same grade merge into one unit a grade higher.
+- Each unit only guards the stretch of road in front of its zone. See a gap marked in red? Swap zones to cover it.
+- Every class has its own skill: multishot, area blasts, freezing, boss slaying, executions. How you fill your four deck slots is the strategy.
 
-👑 **Boss every 10 waves**
-Fail to kill the boss in time and it's game over. Some walls can't be passed without getting stronger.
+■ Real-time 1v1 battles
+- Defend the same waves as your opponent at the same time, and throw the 4 mob cards in your deck (out of 16) onto their field.
+- Spend gold on defense or on attack - that call decides the match.
+- Earn trophies to climb six arenas from Bronze to Master, with a season pass and leaderboard.
+- No opponent around? Practice against a bot.
 
-💎 **Permanent progression**
-Spend crystals on permanent research: attack power, gold gain, and rare summon rates. Every defeat makes you stronger.
+■ Collect and level up 32 units
+- 8 Common, 10 Rare, 8 Epic and 6 Legendary units.
+- Collect cards from chests and draws to level your units.
 
-🏆 **Endless mode & global leaderboard**
-Beating wave 50 is just the beginning. Push your limits in Endless mode and compete worldwide!
+■ Plenty to play solo
+- Campaign: three chapters of 10 stages each.
+- Endless mode: hold out through all 50 waves.
 
-✅ One-handed portrait play
-✅ Transparent gacha odds
-✅ Korean / English
+■ Good to know
+- Portrait, one-handed play.
+- Korean, English, Japanese, Simplified and Traditional Chinese.
+- Progress is saved to your Google Play account, so you can switch devices.
+- Requires an internet connection.
 
 ---
 
@@ -74,24 +87,38 @@ Beating wave 50 is just the beginning. Push your limits in Endless mode and comp
 | 자료 | 규격 | 비고 |
 |---|---|---|
 | 앱 아이콘 | 512×512 PNG (32bit, 알파 없음) | 필수 |
-| 피처 그래픽 | 1024×500 PNG/JPG | 필수 |
-| 폰 스크린샷 | 최소 2장, 세로 (권장 1080×1920+) | 필수 — 게임 화면 캡처 |
-| 태블릿 스크린샷 | 7"/10" 각 1장 이상 | 태블릿 지원 표시 원할 때 |
+| 피처 그래픽 | 1024×500 PNG/JPG | 필수. 원본 `../DefenseBattle/launch/store/graphic_1024x578.png` 는 높이가 달라 다시 잘라야 한다 |
+| 폰 스크린샷 | 최소 2장, 세로 (권장 1080×1920 이상) | 필수. 원본 `launch/store/screenshots` 는 웹판 화면이라 Unity 판에서 다시 찍는다 |
+| 태블릿 스크린샷 | 7"/10" 각 1장 이상 | 태블릿 지원 표시를 원할 때 |
 
 스크린샷 추천 장면:
-1. 유닛 가득한 전투 장면 (등급 다양하게)
-2. 태초/신화 소환 순간 (소환 문구 노출)
-3. 보스전 (보스 타이머 노출)
-4. 연구소 화면
-5. 확률 정보 패널 (투명성 어필)
+1. 유닛이 가득 찬 전투 화면 (등급 색이 다양하게)
+2. 대전 화면 - 몹 카드를 던지는 순간
+3. 신화·태초 소환 배너
+4. 아레나·시즌 패스 화면
+5. 유닛 도감 (32종)
 
 ---
 
 ## 확률 고지 (스토어 설명 하단에 추가 권장)
 
+유료 재화(보석)·유료 상품으로 얻는 확률형 아이템이 있어서 확률을 공개한다. 수치 출처는 괄호 안 파일.
+
 ```
-■ 유닛 소환 확률
+■ 전투 중 유닛 소환 등급 확률 (Grades.cs)
 일반 50% / 고급 33% / 정예 10% / 전설 6.5% / 신화 0.4% / 태초 0.1%
-※ '희귀 소환 연구' 보유 시 일반 확률이 감소하고 고급 확률이 동일량 증가합니다.
-※ 게임 내 [확률 정보] 화면에서 실시간 적용 확률을 확인할 수 있습니다.
+※ '희귀 소환 연구' 레벨이 오르면 전설·신화·태초 확률이 늘어납니다.
+※ 게임 안 확률 정보 화면에서 지금 적용되는 확률을 볼 수 있습니다.
+
+■ 유닛 카드 뽑기 (보석 1회 100 / 10회 900) (Chests.cs GachaRates)
+일반 70% / 희귀 22% / 영웅 7% / 전설 1%
+※ 10회 뽑기는 영웅 이상 1회가 보장됩니다.
+
+■ 상자 (Chests.cs)
+- 나무 상자: 영웅 카드 5%
+- 은 상자: 영웅 카드 25%, 전설 카드 1%
+- 금 상자: 영웅 카드 1장 보장, 전설 카드 4%
+- 마법 상자: 영웅 카드 4장 보장, 전설 카드 20%
+- 전설 상자: 영웅 카드 2장 보장, 전설 카드 1장 보장
+※ 카드 장수는 아레나가 오를수록 늘어납니다.
 ```
