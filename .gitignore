@@ -96,3 +96,6 @@ crashlytics-build.properties
 !/CloudCode/*.sln
 /CloudCode/**/bin/
 /CloudCode/**/obj/
+
+# 에디터별 설정
+.vscode/
