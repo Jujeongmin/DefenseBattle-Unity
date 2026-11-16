@@ -26,6 +26,10 @@ namespace DefenseBattle.View
         /// <summary>피격 흰 번쩍임 (가산 합성)</summary>
         [SerializeField] Material m_flashMaterial;
         [SerializeField] ActorViews m_actors;
+        [SerializeField] EffectsView m_effects;
+        [SerializeField] FloatingTextPool m_texts;
+        /// <summary>흔들림 대상 (전장 루트)</summary>
+        [SerializeField] Transform m_boardRoot;
 
         readonly List<double> m_steps = new List<double>(8);
 
@@ -48,6 +52,9 @@ namespace DefenseBattle.View
         {
             m_board.Init(m_catalog);
             m_actors.Init(m_catalog, m_spriteMaterial, m_flashMaterial);
+            m_texts.Init(m_catalog.NumberFont);
+            m_actors.Labels = m_texts;
+            m_effects.Init(m_catalog, m_spriteMaterial, m_texts, m_boardRoot);
             StartGame(BattleLaunch.Current);
         }
 
@@ -87,8 +94,11 @@ namespace DefenseBattle.View
             m_mobOver.Begin();
             m_over.Begin();
             m_top.Begin();
+            m_texts.BeginFrame();
             m_board.Draw(Game, AnimTime, m_under);
             m_actors.Draw(Game, AnimTime, m_under, m_mobOver, m_over);
+            m_effects.Draw(Game, AnimTime, m_over, m_top);
+            m_texts.EndFrame();
             m_under.End();
             m_mobOver.End();
             m_over.End();

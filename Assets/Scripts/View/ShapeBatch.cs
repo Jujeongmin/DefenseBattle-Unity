@@ -147,6 +147,15 @@ namespace DefenseBattle.View
             Quad(a, a + 1, a + 2, a + 3);
         }
 
+        public void HorizontalGradientRect(float x, float y, float w, float h, Color32 left, Color32 right)
+        {
+            int a = Add(x, y, left);
+            Add(x + w, y, right);
+            Add(x + w, y + h, right);
+            Add(x, y + h, left);
+            Quad(a, a + 1, a + 2, a + 3);
+        }
+
         /// <summary>굵기 width 의 선분 (끝은 평평)</summary>
         public void Line(float x1, float y1, float x2, float y2, float width, Color32 c)
         {

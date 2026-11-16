@@ -22,6 +22,7 @@ public static class BattleAssetsBuilder
     const string IconsPath = Generated + "Icons.asset";
     const string FontPath = "Assets/Fonts/DefenseBattle/Galmuri11 TMP.asset";
     const string BoldFontPath = "Assets/Fonts/DefenseBattle/Galmuri11-Bold TMP.asset";
+    const string NumberFontPath = "Assets/Fonts/DefenseBattle/Galmuri11-Bold SDF.asset";
 
     [MenuItem("Tools/Defense Battle/Build Battle Assets")]
     public static void BuildAll()
@@ -30,14 +31,16 @@ public static class BattleAssetsBuilder
         BakeField();
         TMP_FontAsset font = BuildFont("Assets/Fonts/DefenseBattle/Galmuri11.ttf", FontPath);
         TMP_FontAsset bold = BuildFont("Assets/Fonts/DefenseBattle/Galmuri11-Bold.ttf", BoldFontPath);
+        // 전장 위 숫자는 캔버스처럼 검은 테두리가 필요해 SDF 로 (Raster 셰이더는 테두리가 없다)
+        TMP_FontAsset number = BuildFont("Assets/Fonts/DefenseBattle/Galmuri11-Bold.ttf", NumberFontPath, GlyphRenderMode.SDFAA, 48, 6);
         BuildIconSpriteAsset();
-        BuildCatalog(font, bold);
+        BuildCatalog(font, bold, number);
         AssetDatabase.SaveAssets();
         Debug.Log("[BattleAssets] 완료");
     }
 
     // ---------------- 카탈로그 ----------------
-    static void BuildCatalog(TMP_FontAsset font, TMP_FontAsset bold)
+    static void BuildCatalog(TMP_FontAsset font, TMP_FontAsset bold, TMP_FontAsset number)
     {
         var units = new SpriteCatalog.Sheet[Units.All.Length * Grades.Count];
         foreach (UnitDef u in Units.All)
@@ -73,7 +76,7 @@ public static class BattleAssetsBuilder
         catalog.EditorFill(units, mobs,
             AssetDatabase.LoadAssetAtPath<Sprite>(FieldPath),
             AssetDatabase.LoadAssetAtPath<Sprite>(Art + "UI/Common/coin.png"),
-            icons.ToArray(), font, bold);
+            icons.ToArray(), font, bold, number);
         EditorUtility.SetDirty(catalog);
     }
 
@@ -205,17 +208,17 @@ public static class BattleAssetsBuilder
     }
 
     // ---------------- 폰트 ----------------
-    static TMP_FontAsset BuildFont(string ttfPath, string outPath)
+    /// <summary>기본: 픽셀 폰트라 Raster (번지지 않게), 표본 크기는 원본 글자 크기 12 의 배수</summary>
+    static TMP_FontAsset BuildFont(string ttfPath, string outPath, GlyphRenderMode mode = GlyphRenderMode.RASTER_HINTED, int size = 24, int padding = 2)
     {
         var existing = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(outPath);
         if (existing != null) return existing;
         var ttf = AssetDatabase.LoadAssetAtPath<Font>(ttfPath);
-        // 픽셀 폰트: Raster (번지지 않게), 표본 크기는 원본 글자 크기 12 의 배수
-        TMP_FontAsset fa = TMP_FontAsset.CreateFontAsset(ttf, 24, 2, GlyphRenderMode.RASTER_HINTED, 1024, 1024, AtlasPopulationMode.Dynamic, true);
+        TMP_FontAsset fa = TMP_FontAsset.CreateFontAsset(ttf, size, padding, mode, 1024, 1024, AtlasPopulationMode.Dynamic, true);
         fa.name = Path.GetFileNameWithoutExtension(outPath);
         AssetDatabase.CreateAsset(fa, outPath);
         fa.atlasTextures[0].name = fa.name + " Atlas";
-        fa.atlasTextures[0].filterMode = FilterMode.Point;
+        if (mode == GlyphRenderMode.RASTER_HINTED) fa.atlasTextures[0].filterMode = FilterMode.Point;
         AssetDatabase.AddObjectToAsset(fa.atlasTextures[0], fa);
         fa.material.name = fa.name + " Material";
         AssetDatabase.AddObjectToAsset(fa.material, fa);

@@ -67,6 +67,7 @@ namespace DefenseBattle.View.Tests
             Assert.IsNotNull(c.Font);
             Assert.IsNotNull(c.BoldFont);
             Assert.AreEqual(TMPro.AtlasPopulationMode.Dynamic, c.Font.atlasPopulationMode);
+            Assert.IsNotNull(c.NumberFont, "전장 숫자용 SDF");
         }
     }
 }

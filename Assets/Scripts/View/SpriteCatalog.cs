@@ -36,6 +36,7 @@ namespace DefenseBattle.View
         [SerializeField] Sprite[] m_icons = new Sprite[0];
         [SerializeField] TMP_FontAsset m_font;
         [SerializeField] TMP_FontAsset m_boldFont;
+        [SerializeField] TMP_FontAsset m_numberFont;
 
         Dictionary<string, Sprite> m_iconByName;
 
@@ -44,6 +45,8 @@ namespace DefenseBattle.View
         public Sprite Coin => m_coin;
         public TMP_FontAsset Font => m_font;
         public TMP_FontAsset BoldFont => m_boldFont;
+        /// <summary>전장 위 숫자·이름표 (SDF - 검은 테두리를 쓰려고)</summary>
+        public TMP_FontAsset NumberFont => m_numberFont;
 
         /// <summary>유닛 시트 (직업 × 판 안 등급)</summary>
         public Sprite[] Unit(Job job, int grade) => m_units[(int)job * Grades.Count + grade].Frames;
@@ -69,8 +72,9 @@ namespace DefenseBattle.View
 
 #if UNITY_EDITOR
         /// <summary>에디터 빌더 전용: 내용 채우기</summary>
-        public void EditorFill(Sheet[] units, RaceSheets[] mobs, Sprite field, Sprite coin, Sprite[] icons, TMP_FontAsset font, TMP_FontAsset bold)
+        public void EditorFill(Sheet[] units, RaceSheets[] mobs, Sprite field, Sprite coin, Sprite[] icons, TMP_FontAsset font, TMP_FontAsset bold, TMP_FontAsset number)
         {
+            m_numberFont = number;
             m_units = units;
             m_mobs = mobs;
             m_field = field;

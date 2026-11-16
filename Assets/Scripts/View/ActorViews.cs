@@ -38,6 +38,10 @@ namespace DefenseBattle.View
 
         public int ActiveCount => m_mobs.Count + m_units.Count;
 
+        /// <summary>보스·거인 이름표를 쓸 글자 풀 (없으면 이름표 생략)</summary>
+        public FloatingTextPool Labels { get; set; }
+        readonly char[] m_label = new char[32];
+
         public void Init(SpriteCatalog catalog, Material spriteMaterial, Material flashMaterial)
         {
             m_catalog = catalog;
@@ -109,6 +113,13 @@ namespace DefenseBattle.View
             float by = y - s / 2 - 8;
             mobOver.FillRect(x - w / 2 - 1, by - 1, w + 2, h + 2, Rgba.Of(0, 0, 0, 0.65));
             mobOver.FillRect(x - w / 2, by, w * ratio, h, m.Kind == MobKind.Card && !m.Boss ? Rgba.Hex(0xff8a3d) : Rgba.Hex(0xff5252));
+            // 이름표: 보스, 거인·킹·마왕 (체력 배수 5 이상, 분열 졸개 등 골드가 정해진 몹 제외)
+            bool big = m.IsCard && Attacks.All[m.Card].HpMult >= 5 && m.Gold == null;
+            if (Labels != null && (m.Boss || big))
+            {
+                int n = CharText.Put(m_label, 0, m.Boss ? "BOSS" : Loc.Tl(Attacks.All[m.Card].Kr));
+                Labels.Show(m_label, n, x, by - 5, 14, Rgba.Hex(m.Boss ? 0xffd54fu : 0xff8a3du));
+            }
             if (m.Slow > 0)
             {
                 // 체력 막대 오른쪽 파란 아래 화살표 두 개 = 느려짐 (검은 테두리 3px)

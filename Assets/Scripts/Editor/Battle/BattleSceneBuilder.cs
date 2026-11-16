@@ -56,6 +56,10 @@ public static class BattleSceneBuilder
         actorsGo.transform.SetParent(board.transform, false);
         var actors = actorsGo.AddComponent<ActorViews>();
         Material flash = FlashMaterial();
+        var effects = new GameObject("Effects").AddComponent<EffectsView>();
+        effects.transform.SetParent(board.transform, false);
+        var texts = new GameObject("Texts").AddComponent<FloatingTextPool>();
+        texts.transform.SetParent(board.transform, false);
 
         // UI
         new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
@@ -77,6 +81,9 @@ public static class BattleSceneBuilder
         Set(runner, "m_spriteMaterial", unlit);
         Set(runner, "m_flashMaterial", flash);
         Set(runner, "m_actors", actors);
+        Set(runner, "m_effects", effects);
+        Set(runner, "m_texts", texts);
+        Set(runner, "m_boardRoot", board.transform);
 
         EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), ScenePath);
         AddToBuildSettingsFirst(ScenePath);
