@@ -23,6 +23,7 @@ public static class BattleOverlayBuilder
         BuildHeroPanel(overlaySafe, runner, hud, drag, toast, catalog);
         DefenseBattle.View.ResultPanel result = BuildResult(overlaySafe, catalog);
         LaunchPanel launch = BuildLaunch(overlaySafe);
+        BootPanel boot = BuildBoot(overlaySafe);
         toast.transform.SetAsLastSibling(); // 토스트는 맨 위
 
         var flow = new GameObject("BattleFlow").AddComponent<BattleFlow>();
@@ -32,6 +33,7 @@ public static class BattleOverlayBuilder
         BattleSceneBuilder.Set(flow, "m_launch", launch);
         BattleSceneBuilder.Set(flow, "m_drag", drag);
         BattleSceneBuilder.Set(flow, "m_toast", toast);
+        BattleSceneBuilder.Set(flow, "m_boot", boot);
         var so = new SerializedObject(runner);
         so.FindProperty("m_autoStart").boolValue = false; // 시작 화면이 고른다
         so.ApplyModifiedPropertiesWithoutUndo();
@@ -118,6 +120,30 @@ public static class BattleOverlayBuilder
         // ResultStyle 순서: Plain, Red, Green, Blue
         SetArray(panel, "m_styleSprites", new Object[] { FrameSprite("btn_gray"), FrameSprite("btn_red"), FrameSprite("btn_green"), FrameSprite("btn_blue") });
         SetArray(panel, "m_stylePressed", new Object[] { FrameSprite("btn_gray_down"), FrameSprite("btn_red_down"), FrameSprite("btn_green_down"), FrameSprite("btn_blue_down") });
+        return panel;
+    }
+
+    /// <summary>접속 화면: 로딩 배경 + 상태 글자 + 다시 시도 (맨 위, 접속되면 사라짐)</summary>
+    static BootPanel BuildBoot(RectTransform safe)
+    {
+        RectTransform host = BattleSceneBuilder.Rt(safe.parent, "BootHost"); // 안전 영역 밖까지 덮는다
+        host.Fill();
+        var panel = host.gameObject.AddComponent<BootPanel>();
+        RectTransform root = BattleSceneBuilder.Rt(host, "Panel");
+        root.Fill();
+        Img(root, "Bg", AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/DefenseBattle/UI/Common/loading_bg.jpg"), Color.white).rectTransform.Fill();
+        Image band = Img(root, "Band", null, new Color32(0, 0, 0, 150));
+        band.rectTransform.Place(new Vector2(0.5f, 0.22f), Vector2.zero, new Vector2(2000, 180));
+        TextMeshProUGUI status = Txt(root, "Status", 30, Cream, TextAlignmentOptions.Center);
+        status.rectTransform.Place(new Vector2(0.5f, 0.22f), new Vector2(0, 20), new Vector2(660, 110));
+        status.textWrappingMode = TextWrappingModes.Normal;
+        Button retry = Btn(root, "Retry", "btn_blue", 1.0f);
+        retry.GetComponent<RectTransform>().Place(new Vector2(0.5f, 0.12f), Vector2.zero, new Vector2(360, 96));
+        Txt(retry.transform, "Label", 32, Cream, TextAlignmentOptions.Center, BattleHudBuilder.Loc("다시 시도")).rectTransform.Fill(0, 10, 0, 0);
+        retry.gameObject.SetActive(false);
+        BattleSceneBuilder.Set(panel, "m_root", root.gameObject);
+        BattleSceneBuilder.Set(panel, "m_status", status);
+        BattleSceneBuilder.Set(panel, "m_retry", retry);
         return panel;
     }
 

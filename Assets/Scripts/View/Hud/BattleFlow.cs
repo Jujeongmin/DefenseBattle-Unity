@@ -16,6 +16,7 @@ namespace DefenseBattle.View
         [SerializeField] ZoneDragInput m_drag;
         [SerializeField] Toast m_toast;
         [SerializeField] BattleAudio m_audio;
+        [SerializeField] BootPanel m_boot;
 
         GameOverData m_last;
         bool m_pausedForConfirm;
@@ -28,7 +29,12 @@ namespace DefenseBattle.View
             m_runner.GameStarted += g => m_audio.Bind(g); // 전투 음악 + 엔진 소리 (다시 하기 포함)
         }
 
-        void Start() => ShowLaunch();
+        /// <summary>접속(로그인·경제 동기화) 뒤 로비로 - 연결이 없으면 접속 화면이 다시 시도를 받는다</summary>
+        void Start()
+        {
+            m_audio.SwitchBgm(Bgm.Menu);
+            _ = m_boot.Run(ShowLaunch);
+        }
 
         void ShowLaunch()
         {

@@ -4,7 +4,11 @@
     "references": [
         "DefenseBattle.Core",
         "Unity.TextMeshPro",
-        "UnityEngine.UI"
+        "UnityEngine.UI",
+        "Unity.Services.Core",
+        "Unity.Services.Authentication",
+        "Unity.Services.CloudCode",
+        "Unity.Services.Leaderboards"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
