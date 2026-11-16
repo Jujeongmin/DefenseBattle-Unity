@@ -8,7 +8,7 @@ using DefenseBattle.Core;
 //  새 계정 한 명이 캠페인과 대전을 번갈아 하며 보석으로 연구·유닛 강화를 산다.
 //  실행: dotnet run -c Release --project CoreTests/Sim -- prog [모드=both|pvp] [실력=0.35] [시간=8] [판수=1]
 //    both: 캠페인과 대전을 번갈아 (캠페인이 2번 연속 막히면 대전 3판 뒤 다시 도전)   pvp: 대전만
-//  원본과 다른 점: 대전 상대는 이식판 실제 봇(BotMatch - 트로피에 맞춘 연구 적용)을 그대로 쓴다.
+//  원본과 다른 점: 대전은 실제 게임처럼 양쪽 다 연구를 적용하고 (원본 main.ts·pvp.ts), 상대는 이식판 봇(BotMatch)을 그대로 쓴다.
 //  빠진 것 (원본과 같음): 일일 퀘스트·업적·시즌 패스·챕터 별 상자 보석 - 실제로는 조금 더 빠르다.
 // ============================================================
 static class ProgSim
@@ -237,7 +237,9 @@ static class ProgSim
         Dictionary<Job, int> levels = Levels(e);
         var a = new Game(new GameOptions
         {
-            Mode = GameMode.Pvp, Seed = seed, UseResearch = false, Track = false, Deck = new List<Job>(e.Deck),
+            // 원본 main.ts 실제 대전과 같이 내 연구 적용 (progsim.ts 는 양쪽 다 연구 없이 돌렸다)
+            Mode = GameMode.Pvp, Seed = seed, UseResearch = true, Research = new Dictionary<ResearchKey, int>(e.Research), Track = false,
+            Deck = new List<Job>(e.Deck), DeckMin = Math.Min(Units.DeckSize, e.UnitLevels.Count(kv => kv.Value > 0)),
             AttackDeck = new List<AttackKey>(e.AttackDeck), UnitLevels = levels, RandomSeed = NextInt(r.Rng),
         });
         var bot = new BotMatch(seed, sk, oppTrophies, BotProfile.Research(oppTrophies, p.Wins + p.Losses), BotProfile.Level(e.Deck, levels), r.Rng);
