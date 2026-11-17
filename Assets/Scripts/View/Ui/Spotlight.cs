@@ -22,6 +22,7 @@ namespace DefenseBattle.View
         readonly Image[] m_dim = new Image[4];
         readonly Image[] m_edge = new Image[4];
         RectTransform m_hand;
+        Image m_blocker;
         RectTransform m_bubble;
         TextMeshProUGUI m_text;
         readonly Vector3[] m_corners = new Vector3[4];
@@ -66,6 +67,11 @@ namespace DefenseBattle.View
                 m_dim[i].raycastTarget = true; // 밝힌 곳 밖은 막는다
             }
             for (int i = 0; i < 4; i++) m_edge[i] = Ui.Image(m_root, null, Gold, "Edge");
+            // 탭한 뒤 다음 단계가 뜰 때까지 화면 전체를 막는다 (빠른 두 번 탭이 구멍으로 한 번 더 들어가 단계를 건너뛰지 않게 - 원본은 탭 뒤 onTap 을 비움)
+            m_blocker = Ui.Image(m_root, null, new Color(0, 0, 0, 0), "Blocker");
+            m_blocker.raycastTarget = true;
+            Ui.Fill(m_blocker.rectTransform);
+            m_blocker.enabled = false;
             Image hand = Ui.Image(m_root, Ui.Cat.Icon("pointer"), Color.white, "Hand");
             hand.preserveAspect = true;
             m_hand = hand.rectTransform;
@@ -89,6 +95,7 @@ namespace DefenseBattle.View
         public void Step(Func<GameObject> target, string text, Action tapped)
         {
             Unbind();
+            m_blocker.enabled = false;
             m_target = target;
             m_tapped = tapped;
             m_msgLeft = -1;
@@ -128,6 +135,7 @@ namespace DefenseBattle.View
             if (m_bound == null || (m_bound.TryGetComponent(out Selectable sel) && !sel.IsInteractable())) return;
             Action t = m_tapped;
             m_tapped = null;
+            m_blocker.enabled = true;
             Unbind();
             m_target = null;
             t?.Invoke();
