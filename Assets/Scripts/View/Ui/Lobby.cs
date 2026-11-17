@@ -83,6 +83,7 @@ namespace DefenseBattle.View
             m_settings = new SettingsPage(m_panel, m_audio, () => m_dirty = true);
             m_settings.OpenProfile = m_profile.Open;
             m_settings.ReplayTutorial = ReplayTutorial;
+            m_settings.DeleteAccount = ConfirmDeleteAccount;
             m_campaign.OpenDeck = m_deck.Open; // 스테이지 정보 → 덱 편집 → 다시 스테이지 정보
             m_deck.Shortage = (need, job) => Offers.Shortage(need, job);
             m_pass.BuyPremium = () => m_buy.Buy("season_premium", ok => { if (ok) m_pass.Open(); });
@@ -507,6 +508,34 @@ namespace DefenseBattle.View
         {
             if (m_busy || m_match.Busy) return;
             m_match.Start(EconCache.State, opp => Launch(BattleLaunch.Pvp(opp)));
+        }
+
+        /// <summary>설정 → 계정 삭제: 되돌릴 수 없다고 알리고 확인 → 서버·로그인·기기 기록 삭제 → 앱을 다시 시작하라고 안내 후 종료</summary>
+        void ConfirmDeleteAccount()
+        {
+            m_modal.Confirm(Loc.Tl("계정을 삭제할까요?"),
+                Loc.Tl("보석·유닛·트로피·구매한 상품을 포함한 모든 진행이 서버에서 지워지고 되돌릴 수 없어요."),
+                Loc.Tl("삭제"), ok => { if (ok) DeleteAccountNow(); }, "btn_red");
+        }
+
+        async void DeleteAccountNow()
+        {
+            m_modal.Custom(Loc.Tl("삭제하는 중..."));
+            bool done = await AccountDeletion.Live().Run();
+            if (this == null) return;
+            if (!done)
+            {
+                m_modal.Alert(Loc.Tl("계정 삭제"), Loc.Tl("계정을 삭제하지 못했어요. 잠시 뒤 다시 시도해 주세요"));
+                return;
+            }
+            m_modal.Alert(Loc.Tl("계정 삭제"), Loc.Tl("계정을 삭제했어요. 앱을 다시 시작해 주세요."), () =>
+            {
+#if UNITY_EDITOR
+                UnityEditor.EditorApplication.isPlaying = false;
+#else
+                Application.Quit();
+#endif
+            });
         }
 
         /// <summary>결과 화면 → 스테이지 정보 (다음 스테이지 / 다시 하기)</summary>

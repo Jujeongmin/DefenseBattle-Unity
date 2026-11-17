@@ -55,6 +55,17 @@ namespace DefenseBattle.Server.Ugs
             m_ctx = ctx;
         }
 
+        /// <summary>
+        /// 랭킹에서 지움. 게임 API 에는 점수 삭제가 없어(관리자 API 만) 0점·이름 없음·deleted 표시로 덮고 Top 에서 거른다.
+        /// 계정 자체가 지워지면(Authentication) UGS 가 플레이어 데이터를 정리한다.
+        /// </summary>
+        public async Task Remove(string playerId)
+        {
+            var meta = new Dictionary<string, object> { { "nick", "" }, { "wins", 0 }, { "deleted", true } };
+            await m_api.Leaderboards.AddLeaderboardPlayerScoreAsync(m_ctx, m_ctx.ServiceToken, Guid.Parse(m_ctx.ProjectId), LeaderboardId, playerId,
+                new AddLeaderboardScore(0, meta));
+        }
+
         public async Task Submit(string playerId, int trophies, int wins, string nick)
         {
             var meta = new Dictionary<string, object> { { "nick", nick }, { "wins", wins } };
@@ -69,6 +80,7 @@ namespace DefenseBattle.Server.Ugs
             foreach (LeaderboardEntry e in res.Data.Results)
             {
                 JObject meta = e.Metadata == null ? null : e.Metadata as JObject ?? JObject.Parse(e.Metadata.ToString());
+                if ((bool?)meta?["deleted"] == true) continue; // 삭제한 계정
                 list.Add(new RankEntry
                 {
                     PlayerId = e.PlayerId,

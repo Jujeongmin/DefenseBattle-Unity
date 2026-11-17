@@ -69,6 +69,26 @@ namespace DefenseBattle.Server.Tests
         }
 
         [Test]
+        public async Task DeleteAccount_RemovesSaveRankingAndQueue()
+        {
+            var rig = new Rig();
+            await rig.Server.SetNick("p1", "가나다");
+            await rig.Server.RedeemPurchase("p1", "crystal_100", "ok:D1", "sig", 1200, "KRW");
+            await rig.Rank.Submit("p1", 50, 2, "가나다");
+            await rig.Server.PvpQueue("p1");
+            await rig.Server.SetNick("p2", "라마바");
+            Assert.IsTrue(rig.Store.HasPlayerData("p1"));
+
+            Assert.IsTrue(await rig.Server.DeleteAccount("p1"));
+
+            Assert.IsFalse(rig.Store.HasPlayerData("p1"), "저장본(경제·프로필 등) 전부 삭제");
+            Assert.IsFalse(rig.Rank.Rows.ContainsKey("p1"), "랭킹에서 삭제");
+            Assert.AreEqual(QueueStatus.Idle, (await rig.Server.PvpPoll("p1")).Status, "대기열에서 빠짐");
+            Assert.IsTrue(rig.Store.HasPlayerData("p2"), "다른 플레이어는 그대로");
+            Assert.AreEqual("라마바", await rig.Server.GetNick("p2"));
+        }
+
+        [Test]
         public async Task Purchase_ReplayAfterManyBattles_NotGrantedAgain()
         {
             var rig = new Rig();

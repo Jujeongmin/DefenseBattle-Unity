@@ -36,5 +36,7 @@ namespace DefenseBattle.Server
     {
         Task Submit(string playerId, int trophies, int wins, string nick);
         Task<List<RankEntry>> Top(int count);
+        /// <summary>랭킹에서 지움 (계정 삭제)</summary>
+        Task Remove(string playerId);
     }
 }

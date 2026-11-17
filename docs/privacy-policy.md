@@ -51,7 +51,8 @@
 앱은 특정 연령을 대상으로 하지 않는 일반 이용가 게임이며, 아동으로부터 고의로 개인정보를 수집하지 않습니다.
 
 ### 7. 계정과 데이터 삭제
-- 계정·게임 데이터 삭제는 **anjshdkdl99@gmail.com** 으로 요청해 주세요. 게임 안 닉네임과 마지막으로 플레이한 날짜(Google Play 게임즈로 로그인했다면 그 계정 이메일)를 함께 보내 주시면 본인 확인 뒤 30일 안에 서버의 계정, 진행, 랭킹 기록을 삭제하고 결과를 알려 드립니다.
+- **앱 안에서 바로 삭제:** 설정 → 계정 삭제 → 확인. 서버의 진행·닉네임·랭킹 기록과 로그인 계정이 바로 삭제되고, 기기의 기록도 지워집니다. 되돌릴 수 없습니다.
+- 앱을 쓸 수 없으면 **anjshdkdl99@gmail.com** 으로 요청해 주세요. 게임 안 닉네임과 마지막으로 플레이한 날짜(Google Play 게임즈로 로그인했다면 그 계정 이메일)를 함께 보내 주시면 본인 확인 뒤 30일 안에 삭제하고 결과를 알려 드립니다.
 - 구매 기록 중 법령상 보관 의무가 있는 정보는 그 기간이 지난 뒤 삭제합니다.
 - 기기에 저장된 설정은 앱을 삭제하면 함께 지워집니다.
 
@@ -107,7 +108,8 @@ Information may be processed on these providers' servers, including outside your
 The App is a general-audience game and does not knowingly collect personal information from children.
 
 ### 7. Account and data deletion
-- To delete your account and game data, email **anjshdkdl99@gmail.com** with your in-game nickname and the date you last played (and, if you signed in with Google Play Games, that account's email). After confirming the request, we delete your account, progress and ranking records from the server within 30 days and let you know.
+- **In the app:** Settings → Delete account → confirm. Your progress, nickname and ranking records on the server and your sign-in account are deleted right away, along with the records on your device. This cannot be undone.
+- If you can't use the app, email **anjshdkdl99@gmail.com** with your in-game nickname and the date you last played (and, if you signed in with Google Play Games, that account's email). After confirming the request, we delete your data within 30 days and let you know.
 - Purchase records that we must keep by law are deleted after that period ends.
 - Settings stored on your device are removed when you uninstall the App.
 

@@ -13,6 +13,8 @@ namespace DefenseBattle.Server
         Task<StoredItem> GetPlayer(string playerId, string key);
         /// <returns>새 WriteLock</returns>
         Task<string> SetPlayer(string playerId, string key, string json, string writeLock);
+        /// <summary>플레이어의 저장 값 전부 삭제 (계정 삭제)</summary>
+        Task DeletePlayer(string playerId);
         Task<StoredItem> GetShared(string key);
         Task<string> SetShared(string key, string json, string writeLock);
     }

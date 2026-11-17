@@ -45,6 +45,14 @@ namespace DefenseBattle.Server.Ugs
         public Task<string> SetPlayer(string playerId, string key, string json, string writeLock)
             => Write(key, () => m_api.CloudSaveData.SetProtectedItemAsync(m_ctx, m_ctx.ServiceToken, m_ctx.ProjectId, playerId, new SetItemBody(key, JToken.Parse(json), writeLock)));
 
+        public async Task DeletePlayer(string playerId)
+        {
+            try { await m_api.CloudSaveData.DeleteProtectedItemsAsync(m_ctx, m_ctx.ServiceToken, m_ctx.ProjectId, playerId); }
+            catch (ApiException e) when (e.Response != null && e.Response.StatusCode == HttpStatusCode.NotFound) { } // 저장 값 없음
+            try { await m_api.CloudSaveData.DeleteItemsAsync(m_ctx, m_ctx.ServiceToken, m_ctx.ProjectId, playerId); } // 기본(기기가 쓰는) 값도
+            catch (ApiException e) when (e.Response != null && e.Response.StatusCode == HttpStatusCode.NotFound) { }
+        }
+
         public async Task<StoredItem> GetShared(string key)
         {
             ApiResponse<GetItemsResponse> res = await m_api.CloudSaveData.GetPrivateCustomItemsAsync(m_ctx, m_ctx.ServiceToken, m_ctx.ProjectId, CustomId, new List<string> { key });

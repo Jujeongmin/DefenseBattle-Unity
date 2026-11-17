@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace DefenseBattle.View
 {
-    /// <summary>설정 (menu.ts openSettings): 배경음악·효과음 음량, 언어 5종, 튜토리얼 다시 하기, 프로필</summary>
+    /// <summary>설정 (menu.ts openSettings): 배경음악·효과음 음량, 언어 5종, 튜토리얼 다시 하기, 프로필, 광고 개인정보(필요한 지역), 계정 삭제</summary>
     public sealed class SettingsPage
     {
         readonly Modal m_panel;
@@ -16,6 +16,8 @@ namespace DefenseBattle.View
         /// <summary>프로필 열기 / 튜토리얼 다시 (로비가 연결)</summary>
         public Action OpenProfile;
         public Action ReplayTutorial;
+        /// <summary>계정 삭제 (확인 창부터 - 로비가 연결)</summary>
+        public Action DeleteAccount;
 
         public SettingsPage(Modal panel, BattleAudio audio, Action closed)
         {
@@ -58,6 +60,7 @@ namespace DefenseBattle.View
             Row(body, "trophy", "<noparse>" + Profile.Nick + "</noparse>", Loc.Tl("프로필"), () => OpenProfile?.Invoke());
             // 광고 동의가 필요한 지역이면 동의를 다시 고를 수 있게 (Google UMP 개인정보 옵션)
             if (AdPrivacy.Available) Row(body, "lock", Loc.Tl("광고 개인정보 설정"), Loc.Tl("변경"), () => AdPrivacy.Show?.Invoke());
+            Row(body, "trash", Loc.Tl("계정 삭제"), Loc.Tl("삭제"), () => DeleteAccount?.Invoke(), "btn_red");
         }
 
         void Volume(Transform body, string icon, string label, float value, Action<float> set, bool sfx)
@@ -91,14 +94,14 @@ namespace DefenseBattle.View
             Ui.Size(num.gameObject, 64, -1);
         }
 
-        static void Row(Transform body, string icon, string title, string button, Action click)
+        static void Row(Transform body, string icon, string title, string button, Action click, string buttonFrame = "btn_blue")
         {
             Image row = Ui.Frame(body, "paper_dark", 1.8f, title);
             Ui.Size(row.gameObject, -1, 100);
             Ui.Row(row.transform, 14, 20, 20, 10, 12);
             Ui.Icon(row.transform, icon, 44);
             Ui.Size(Ui.Line(row.transform, title, 26, Ui.Cream, TextAlignmentOptions.Left).gameObject, -1, -1, 1);
-            Ui.Size(Ui.Button(row.transform, "btn_blue", button, 24, click).gameObject, 180, 68);
+            Ui.Size(Ui.Button(row.transform, buttonFrame, button, 24, click).gameObject, 180, 68);
         }
     }
 }

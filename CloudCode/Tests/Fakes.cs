@@ -27,6 +27,16 @@ namespace DefenseBattle.Server.Tests
 
         public Task<StoredItem> GetPlayer(string playerId, string key) => Get("p:" + playerId + ":" + key);
         public Task<string> SetPlayer(string playerId, string key, string json, string writeLock) => Set("p:" + playerId + ":" + key, json, writeLock);
+        public Task DeletePlayer(string playerId)
+        {
+            foreach (string k in new List<string>(m_data.Keys)) if (k.StartsWith("p:" + playerId + ":")) m_data.Remove(k);
+            return Task.CompletedTask;
+        }
+        public bool HasPlayerData(string playerId)
+        {
+            foreach (string k in m_data.Keys) if (k.StartsWith("p:" + playerId + ":")) return true;
+            return false;
+        }
         public Task<StoredItem> GetShared(string key) => Get("s:" + key);
         public Task<string> SetShared(string key, string json, string writeLock) => Set("s:" + key, json, writeLock);
     }
@@ -55,6 +65,12 @@ namespace DefenseBattle.Server.Tests
         public Task Submit(string playerId, int trophies, int wins, string nick)
         {
             Rows[playerId] = new RankEntry { PlayerId = playerId, Trophies = trophies, Wins = wins, Nick = nick };
+            return Task.CompletedTask;
+        }
+
+        public Task Remove(string playerId)
+        {
+            Rows.Remove(playerId);
             return Task.CompletedTask;
         }
 
