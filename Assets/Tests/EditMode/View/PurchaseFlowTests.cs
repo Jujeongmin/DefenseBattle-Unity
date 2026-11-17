@@ -119,6 +119,90 @@ namespace DefenseBattle.View.Tests
         }
 
         [UnityTest]
+        public IEnumerator Buy_FailedWithUnknownId_FinishesWait()
+        {
+            // IAP 는 실패 주문 id 로 "InvalidProduct" 나 구매 토큰을 주기도 한다 - 결제 창이 하나뿐이니 그 창의 실패다
+            var be = new FakeBackend();
+            var flow = new PurchaseFlow(be, () => "tag1", a => Task.FromResult(Granted()));
+            Task<List<Reveal>> buy = flow.Buy("crystal_100");
+            be.Fail("InvalidProduct", false);
+            yield return Wait(buy);
+            Assert.IsTrue(buy.IsCompleted);
+            Assert.IsNull(buy.Result);
+            Assert.IsFalse(flow.Busy);
+        }
+
+        [Test]
+        public void Buy_FailedForOtherProduct_KeepsWaiting()
+        {
+            var be = new FakeBackend();
+            var flow = new PurchaseFlow(be, () => "tag1", a => Task.FromResult(Granted()));
+            Task<List<Reveal>> buy = flow.Buy("crystal_100");
+            be.Fail("crystal_550", false);
+            Assert.IsFalse(buy.IsCompleted);
+            Assert.IsTrue(flow.Busy);
+        }
+
+        static Func<RedeemArgs, Task<PurchaseReply>> FailsFirst(Func<int> calls, Action count)
+            => a =>
+            {
+                count();
+                if (calls() == 1) return Task.FromException<PurchaseReply>(new Exception("offline"));
+                return Task.FromResult(Granted());
+            };
+
+        [UnityTest]
+        public IEnumerator RedeemThrows_RetryLater_GrantsAndRestores()
+        {
+            int calls = 0;
+            var be = new FakeBackend();
+            var flow = new PurchaseFlow(be, () => "tag1", FailsFirst(() => calls, () => calls++));
+            var restored = new List<string>();
+            flow.Restored += (id, r) => restored.Add(id);
+            Task<List<Reveal>> buy = flow.Buy("crystal_100");
+            be.Pend("crystal_100");
+            yield return Wait(buy);
+            Assert.IsNull(buy.Result, "서버에 못 닿음 → 이번엔 실패");
+            Assert.AreEqual(0, be.Confirmed.Count);
+            Task retry = flow.RetryUnredeemed();
+            yield return Wait(retry);
+            CollectionAssert.AreEqual(new[] { "crystal_100" }, restored);
+            Assert.AreEqual(1, be.Confirmed.Count);
+        }
+
+        [UnityTest]
+        public IEnumerator Buy_SameProductUnredeemed_RedeemsWithoutOpeningStore()
+        {
+            // 결제는 됐는데 서버에 못 닿은 주문이 있으면 다시 누를 때 그 주문을 지급한다 (스토어는 '이미 가진 상품'으로 거절하니까)
+            int calls = 0;
+            var be = new FakeBackend();
+            var flow = new PurchaseFlow(be, () => "tag1", FailsFirst(() => calls, () => calls++));
+            Task<List<Reveal>> first = flow.Buy("crystal_100");
+            be.Pend("crystal_100");
+            yield return Wait(first);
+            Task<List<Reveal>> again = flow.Buy("crystal_100");
+            yield return Wait(again);
+            Assert.AreEqual(1, be.Bought.Count, "결제 창을 다시 열지 않는다");
+            Assert.IsNotNull(again.Result);
+            Assert.AreEqual(1, be.Confirmed.Count);
+            Assert.IsFalse(flow.Busy);
+        }
+
+        [UnityTest]
+        public IEnumerator RejectedOrder_NotRetried()
+        {
+            int calls = 0;
+            var be = new FakeBackend();
+            var flow = new PurchaseFlow(be, () => "tag1", a => { calls++; return Task.FromResult(new PurchaseReply { Granted = false }); });
+            Task<List<Reveal>> buy = flow.Buy("crystal_100");
+            be.Pend("crystal_100");
+            yield return Wait(buy);
+            Task retry = flow.RetryUnredeemed();
+            yield return Wait(retry);
+            Assert.AreEqual(1, calls, "서버가 거절한 주문은 다시 보내지 않는다 (확인 안 함 → 환불)");
+        }
+
+        [UnityTest]
         public IEnumerator PendingOnStart_RedeemedAndRestoredRaised()
         {
             // 결제 도중 앱이 꺼졌던 주문: 다음 실행에서 스토어가 다시 알려 주면 지급·확인하고 알린다

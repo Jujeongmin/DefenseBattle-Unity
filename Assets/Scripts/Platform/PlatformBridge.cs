@@ -37,6 +37,12 @@ public sealed class PlatformBridge : MonoBehaviour
         else Store.ConnectFailed = true;
     }
 
+    /// <summary>앱으로 돌아오면 결제는 됐는데 서버에 못 닿은 주문을 다시 보낸다</summary>
+    void OnApplicationPause(bool paused)
+    {
+        if (!paused && m_flow != null && m_flow.Connected) _ = m_flow.RetryUnredeemed();
+    }
+
     static Task<PurchaseReply> Redeem(RedeemArgs a) => CloudClient.Call<PurchaseReply>(CloudApi.RedeemPurchase, new Dictionary<string, object>
     {
         { "productId", a.ProductId }, { "purchaseData", a.PurchaseData }, { "signature", a.Signature },

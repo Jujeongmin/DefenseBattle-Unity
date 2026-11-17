@@ -18,6 +18,7 @@ namespace DefenseBattle.View
         readonly Func<string> m_accountTag;
         readonly Func<RedeemArgs, Task<PurchaseReply>> m_redeem;
         readonly HashSet<string> m_redeeming = new HashSet<string>();
+        readonly List<IapOrder> m_unredeemed = new List<IapOrder>();
         TaskCompletionSource<List<Reveal>> m_wait;
         string m_waitId;
 
@@ -60,6 +61,13 @@ namespace DefenseBattle.View
             m_wait = new TaskCompletionSource<List<Reveal>>();
             m_waitId = productId;
             Task<List<Reveal>> t = m_wait.Task;
+            IapOrder paid = TakeUnredeemed(productId);
+            if (paid != null)
+            {
+                // 이 상품은 결제됐는데 서버에 못 닿았다 - 스토어는 '이미 가진 상품'으로 거절하니 그 주문을 지급한다
+                RedeemWaiting(paid);
+                return t;
+            }
             try { m_backend.Buy(productId, m_accountTag()); }
             catch (Exception ex)
             {
@@ -69,42 +77,83 @@ namespace DefenseBattle.View
             return t;
         }
 
+        /// <summary>결제는 됐는데 서버에 못 닿은 주문을 다시 보낸다 (앱으로 돌아올 때). 지급되면 Restored</summary>
+        public async Task RetryUnredeemed()
+        {
+            if (m_unredeemed.Count == 0) return;
+            var orders = new List<IapOrder>(m_unredeemed);
+            m_unredeemed.Clear();
+            foreach (IapOrder o in orders)
+            {
+                List<Reveal> r = await Redeem(o);
+                if (r != null) Restored?.Invoke(o.ProductId, r);
+            }
+        }
+
+        IapOrder TakeUnredeemed(string productId)
+        {
+            for (int i = 0; i < m_unredeemed.Count; i++)
+            {
+                if (m_unredeemed[i].ProductId != productId) continue;
+                IapOrder o = m_unredeemed[i];
+                m_unredeemed.RemoveAt(i);
+                return o;
+            }
+            return null;
+        }
+
+        async void RedeemWaiting(IapOrder order) => Complete(await Redeem(order));
+
         void OnFailed(string productId, bool cancelled)
         {
-            if (m_wait != null && (productId == null || productId == m_waitId)) Complete(null);
+            if (m_wait == null) return;
+            // 실패 id 가 다른 상품이면 그 주문 일. 그 밖(이 상품·null·"InvalidProduct"·구매 토큰)은 열려 있는 결제 창의 실패
+            if (productId != null && productId != m_waitId && Products.Get(productId) != null) return;
+            Complete(null);
         }
 
         async void OnPending(IapOrder order)
         {
             if (order == null) return;
-            string key = order.Receipt ?? order.ProductId;
-            if (!m_redeeming.Add(key)) return; // 같은 주문이 두 번 알려져도 서버엔 한 번
-            List<Reveal> result = null;
-            try
-            {
-                if (GoogleReceipt.TryParse(order.Receipt, out string json, out string signature))
-                {
-                    decimal? price = m_backend.LocalPrice(order.ProductId);
-                    PurchaseReply r = await m_redeem(new RedeemArgs
-                    {
-                        ProductId = order.ProductId, PurchaseData = json, Signature = signature,
-                        LocalCost = price.HasValue ? (int)Math.Round(price.Value) : 0, Currency = m_backend.Currency(order.ProductId),
-                    });
-                    if (r != null && (r.Granted || r.AlreadyGranted))
-                    {
-                        if (r.Econ != null) EconCache.Apply(r.Econ);
-                        m_backend.Confirm(order);
-                        result = r.Reveals ?? new List<Reveal>();
-                    }
-                    else Debug.LogWarning("[IAP] 서버가 영수증을 받지 않음 - 주문을 확인하지 않는다: " + order.ProductId);
-                }
-                else Debug.LogWarning("[IAP] 영수증을 읽을 수 없음: " + order.ProductId);
-            }
-            catch (Exception ex) { Debug.LogWarning("[IAP] 지급 요청 실패 (다음 실행에서 다시): " + ex.Message); }
-            finally { m_redeeming.Remove(key); }
-
+            List<Reveal> result = await Redeem(order);
             if (m_wait != null && order.ProductId == m_waitId) Complete(result);
             else if (result != null) Restored?.Invoke(order.ProductId, result);
+        }
+
+        /// <summary>서버 지급 → 지급(또는 이미 지급)이면 주문 확인하고 공개 목록, 아니면 null. 서버에 못 닿으면 다시 보낼 목록에 둔다</summary>
+        async Task<List<Reveal>> Redeem(IapOrder order)
+        {
+            string key = order.Receipt ?? order.ProductId;
+            if (!m_redeeming.Add(key)) return null; // 같은 주문이 두 번 알려져도 서버엔 한 번
+            try
+            {
+                if (!GoogleReceipt.TryParse(order.Receipt, out string json, out string signature))
+                {
+                    Debug.LogWarning("[IAP] 영수증을 읽을 수 없음: " + order.ProductId);
+                    return null;
+                }
+                decimal? price = m_backend.LocalPrice(order.ProductId);
+                PurchaseReply r = await m_redeem(new RedeemArgs
+                {
+                    ProductId = order.ProductId, PurchaseData = json, Signature = signature,
+                    LocalCost = price.HasValue ? (int)Math.Round(price.Value) : 0, Currency = m_backend.Currency(order.ProductId),
+                });
+                if (r == null || !(r.Granted || r.AlreadyGranted))
+                {
+                    Debug.LogWarning("[IAP] 서버가 영수증을 받지 않음 - 주문을 확인하지 않는다: " + order.ProductId);
+                    return null;
+                }
+                if (r.Econ != null) EconCache.Apply(r.Econ);
+                m_backend.Confirm(order);
+                return r.Reveals ?? new List<Reveal>();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[IAP] 지급 요청 실패 (앱으로 돌아오거나 다시 누르면 다시): " + ex.Message);
+                if (!m_unredeemed.Contains(order)) m_unredeemed.Add(order);
+                return null;
+            }
+            finally { m_redeeming.Remove(key); }
         }
 
         void Complete(List<Reveal> result)
