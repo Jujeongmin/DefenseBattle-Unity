@@ -302,10 +302,11 @@ public static class BattleAssetsBuilder
     // ---------------- 아이콘 TMP Sprite Asset ----------------
     static void BuildIconSpriteAsset()
     {
-        // 픽셀 아이콘(16px) + 재화 그림(동전·보석, 원본 icon('coin')/icon('gem'))
+        // 픽셀 아이콘(16px) + 재화·상자 그림 (원본 style.css .pi-coin/.pi-gem/.pi-chest = /ui/coin·gem·chest.png)
         var fileList = new List<string>(Directory.GetFiles(Art + "UI/Icons", "*.png"));
         fileList.Add(Art + "UI/Common/coin.png");
         fileList.Add(Art + "UI/Common/gem.png");
+        fileList.Add(Art + "UI/Common/chest.png");
         string[] files = fileList.ToArray();
         var textures = new Texture2D[files.Length];
         for (int i = 0; i < files.Length; i++) textures[i] = ReadPng(files[i]);

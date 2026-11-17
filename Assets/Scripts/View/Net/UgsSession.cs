@@ -37,7 +37,7 @@ namespace DefenseBattle.Services
             try
             {
                 if (UnityServices.State != ServicesInitializationState.Initialized)
-                    await UnityServices.InitializeAsync();
+                    await UnityServices.InitializeAsync(Options());
 
                 var auth = AuthenticationService.Instance;
                 if (auth.IsSignedIn)
@@ -52,6 +52,29 @@ namespace DefenseBattle.Services
                 Debug.LogWarning($"[UGS] 로그인 실패 ({UnityServices.State}): {root.GetType().Name} {root.Message}");
                 throw;
             }
+        }
+
+        /// <summary>
+        /// 에디터 Multiplayer Play Mode 가상 플레이어는 같은 PlayerPrefs(세션 토큰)를 쓰므로 Authentication 프로필을 나눠 다른 플레이어로 들어간다
+        /// (가상 플레이어 프로젝트는 Library/VP/ 아래에서 돈다). 실제 기기는 기본 프로필.
+        /// </summary>
+        static InitializationOptions Options()
+        {
+            var o = new InitializationOptions();
+#if UNITY_EDITOR
+            string path = Application.dataPath.Replace('\\', '/');
+            int vp = path.IndexOf("/Library/VP/", StringComparison.Ordinal);
+            if (vp >= 0)
+            {
+                string rest = path.Substring(vp + "/Library/VP/".Length);
+                int slash = rest.IndexOf('/');
+                string name = slash > 0 ? rest.Substring(0, slash) : rest;
+                var sb = new System.Text.StringBuilder("vp");
+                foreach (char c in name) if (char.IsLetterOrDigit(c)) sb.Append(c);
+                o.SetProfile(sb.Length > 30 ? sb.ToString(0, 30) : sb.ToString());
+            }
+#endif
+            return o;
         }
 
         /// <summary>UGS 초기화 예외는 AggregateException 으로 여러 겹 감싸져 온다 - 맨 안쪽 원인을 꺼낸다.</summary>

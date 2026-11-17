@@ -149,6 +149,27 @@ namespace DefenseBattle.View.Tests
         }
 
         [UnityTest]
+        public IEnumerator Ping_ResultWithoutMyTrophiesYet_WaitsForFullResult()
+        {
+            // 서버는 경기를 'done' 으로 먼저 바꾸고 트로피·보상을 채운 뒤 결과를 다시 쓴다 - 그 사이 Ping 은 반쪽 결과를 받는다
+            var partial = new PvpMatchResult { MatchId = "m1", Winner = "me", Loser = "opp", Reason = "leave" };
+            var server = new FakeServer();
+            server.PingReplies.Enqueue(new MatchState { Status = MatchState.Done, Result = partial });
+            server.PingReply = new MatchState { Status = MatchState.Done, Result = Result("me") };
+            var opp = new OnlineOpponent(Match(), 3, server, new FakeLink());
+            var outs = new List<PvpOutcome>();
+            opp.Finished += o => outs.Add(o);
+            opp.Tick(OnlineOpponent.PingInterval);
+            yield return Frames();
+            Assert.AreEqual(0, outs.Count, "반쪽 결과로 끝내지 않는다");
+            opp.Tick(OnlineOpponent.PingInterval);
+            yield return Frames();
+            Assert.AreEqual(1, outs.Count);
+            Assert.AreEqual(30, outs[0].Delta);
+            Assert.AreEqual(160, outs[0].Trophies);
+        }
+
+        [UnityTest]
         public IEnumerator Defeat_ResultFinishes()
         {
             var server = new FakeServer { DefeatReply = Result("opp") };

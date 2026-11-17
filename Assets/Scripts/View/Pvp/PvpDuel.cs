@@ -76,6 +76,8 @@ namespace DefenseBattle.View
             if (m_closed) return;
             if (m_fallback >= 0)
             {
+                Opponent.Tick(dt); // 실시간 상대는 결과를 Ping 으로도 받는다
+                if (m_closed) return;
                 m_fallback -= dt;
                 if (m_fallback < 0) OnFinished(new PvpOutcome { Won = false, Trophies = EconCache.State.Pvp.Trophies });
                 return;

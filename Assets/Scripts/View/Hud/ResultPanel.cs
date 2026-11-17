@@ -51,7 +51,9 @@ namespace DefenseBattle.View
             m_stars.SetActive(v.Stars.HasValue);
             for (int i = 0; i < m_starImages.Length; i++) m_starImages[i].sprite = v.Stars.HasValue && i < v.Stars.Value ? m_starOn : m_starOff;
             m_sub.text = v.Sub ?? "";
-            m_rewards.text = string.Join("   ", v.Rewards);
+            // 원본 .rewards { flex-wrap: wrap } - 항목이 많으면 다음 줄로, 항목 안에서는 끊지 않는다
+            m_rewards.textWrappingMode = TextWrappingModes.Normal;
+            m_rewards.text = "<nobr>" + string.Join("</nobr>   <nobr>", v.Rewards) + "</nobr>";
             m_rewards.gameObject.SetActive(v.Rewards.Count > 0);
             // 원본 문구에 남은 HTML(<div class="fine">)은 지운다 (TMP 태그가 아님)
             m_extra.text = string.IsNullOrEmpty(v.Extra) ? "" : s_tags.Replace(v.Extra, "");

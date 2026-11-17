@@ -100,6 +100,21 @@ namespace DefenseBattle.View.Tests
         }
 
         [Test]
+        public void WaitingForResult_KeepsTickingOpponent()
+        {
+            // 실시간 상대는 내가 무너진 뒤에도 Ping 으로 서버 결과를 받아야 한다
+            Game g = NewGame();
+            var opp = new FakeOpponent();
+            var duel = new PvpDuel(g, opp);
+            duel.Tick(PvpDuel.CountdownSec + 0.1);
+            g.PvpEnd(false, "test");
+            int before = opp.Ticks;
+            duel.Tick(1);
+            duel.Tick(1);
+            Assert.AreEqual(before + 2, opp.Ticks);
+        }
+
+        [Test]
         public void Leave_ReportsDefeatOnce()
         {
             var opp = new FakeOpponent();

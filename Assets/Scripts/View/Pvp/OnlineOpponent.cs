@@ -153,6 +153,8 @@ namespace DefenseBattle.View
         {
             if (r == null || m_done) return;
             string me = m_server.PlayerId ?? "";
+            // 서버는 경기를 먼저 'done' 으로 바꾸고 트로피·보상을 채운 뒤 결과를 다시 쓴다 - 내 트로피가 없으면 아직 반쪽, 다음 Ping 에서 받는다
+            if (r.Trophies == null || !r.Trophies.ContainsKey(me)) return;
             var o = new PvpOutcome
             {
                 Won = r.Winner == me,
