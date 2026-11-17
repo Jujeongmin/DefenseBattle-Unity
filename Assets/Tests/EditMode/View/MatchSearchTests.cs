@@ -152,18 +152,31 @@ namespace DefenseBattle.View.Tests
         }
 
         [UnityTest]
-        public IEnumerator Connect_Guest_WaitsForCodeThenJoins()
+        public IEnumerator Connect_Guest_JoinsRelayThenReadies()
         {
-            var s = new FakeServer { ReadyReply = (m, c) => new MatchState { Status = MatchState.Waiting } };
+            // 손님은 Relay 에 들어간 뒤에야 준비한다 - 준비하는 순간 서버가 경기를 시작하므로, 그 전에 실패하면 취소(패배 아님)
+            var s = new FakeServer { ReadyReply = (m, c) => new MatchState { Status = MatchState.Playing, RelayJoinCode = "CODE9", StartAt = 5_000, Now = 2_000 } };
             s.PingReplies.Enqueue(new MatchState { Status = MatchState.Waiting });
-            s.PingReplies.Enqueue(new MatchState { Status = MatchState.Playing, RelayJoinCode = "CODE9", StartAt = 5_000, Now = 2_000 });
+            s.PingReplies.Enqueue(new MatchState { Status = MatchState.Waiting, RelayJoinCode = "CODE9" });
             var f = new FakeFactory();
             Task<OnlineOpponent> t = New(s, f).Connect(Info(false), () => false);
             yield return Until(t);
             Assert.IsNotNull(t.Result);
-            Assert.AreEqual("ready:", s.Calls[0], "손님은 코드 없이 준비");
+            CollectionAssert.AreEqual(new[] { "ping", "ping", "ready:" }, s.Calls);
             CollectionAssert.AreEqual(new[] { "join:CODE9" }, f.Calls);
             Assert.AreEqual(3.0, t.Result.StartDelay, 1e-6);
+        }
+
+        [UnityTest]
+        public IEnumerator Connect_GuestJoinFails_LeavesWithoutReady()
+        {
+            var s = new FakeServer { PingReply = new MatchState { Status = MatchState.Waiting, RelayJoinCode = "CODE9" } };
+            var f = new FakeFactory { Fail = true };
+            Task<OnlineOpponent> t = New(s, f).Connect(Info(false), () => false);
+            yield return Until(t);
+            Assert.IsNull(t.Result);
+            Assert.IsFalse(s.Calls.Exists(c => c.StartsWith("ready")), "준비 전이면 서버가 경기를 취소한다 (트로피 변화 없음)");
+            Assert.Contains("leave", s.Calls);
         }
 
         [UnityTest]

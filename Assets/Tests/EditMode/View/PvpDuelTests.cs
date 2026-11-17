@@ -66,6 +66,19 @@ namespace DefenseBattle.View.Tests
         }
 
         [Test]
+        public void Countdown_FollowsOpponentClock()
+        {
+            // 화면이 한 프레임 끊겨 deltaTime 이 잘려도, 실시간 상대가 가진 시계(서버 시작 시각)에 맞춰 시작한다
+            Game g = NewGame();
+            var opp = new FakeOpponent { StartDelay = 3 };
+            var duel = new PvpDuel(g, opp);
+            duel.Tick(0.1);
+            opp.StartDelay = 0;
+            duel.Tick(0.016);
+            Assert.IsFalse(g.Paused);
+        }
+
+        [Test]
         public void Finished_Twice_ResultOnce()
         {
             var opp = new FakeOpponent();

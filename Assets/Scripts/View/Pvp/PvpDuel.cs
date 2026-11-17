@@ -18,6 +18,7 @@ namespace DefenseBattle.View
 
         readonly Game m_player;
         readonly BoardSnapshot m_mySnap = new BoardSnapshot();
+        readonly AttackGate m_gate = new AttackGate();
         double m_countdown;
         double m_snapAcc;
         double m_fallback = -1;
@@ -53,7 +54,8 @@ namespace DefenseBattle.View
 
         void OnOppAttack(AttackPayload p)
         {
-            if (!m_closed && m_started) m_player.ReceiveAttack(p);
+            if (m_closed || !m_started) return;
+            if (m_gate.Allow(ref p, m_player.Wave, Elapsed)) m_player.ReceiveAttack(p); // 웨이브·빈도 검사 (실시간 상대는 직접 보낸다)
         }
 
         void OnMyEnd(GameOverData d)
@@ -84,7 +86,8 @@ namespace DefenseBattle.View
             }
             if (!m_started)
             {
-                m_countdown -= dt;
+                // 실시간 상대는 서버 시작 시각을 따라 줄어드는 StartDelay 를 가진다 - 프레임이 끊겨 dt 가 잘려도 늦지 않게
+                m_countdown = Math.Min(m_countdown - dt, Opponent.StartDelay);
                 if (m_countdown > 0) return;
                 m_started = true;
                 m_player.Paused = false;

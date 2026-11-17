@@ -8,7 +8,7 @@ namespace DefenseBattle.View
     /// <summary>
     /// 실시간 상대 찾기와 연결 (pvp.ts findOnlineMatch · OnlineSession.ready).
     /// Find: 대기열에 넣고 0.5초마다 확인 (대기열이 만료됐으면 다시 등록), maxWait 초 안에 못 찾거나 서버에 못 닿으면 null → 봇.
-    /// Connect: 호스트는 Relay 방을 열어 참가 코드와 함께 준비, 손님은 준비 뒤 코드가 오면 들어간다.
+    /// Connect: 호스트는 Relay 방을 열어 참가 코드와 함께 준비, 손님은 코드가 오면 Relay 에 들어간 뒤 준비한다.
     /// 둘 다 준비돼 서버가 시작 시각을 정하면 OnlineOpponent 를 돌려준다. 취소·30초 초과·실패면 경기에서 나가고 null.
     /// </summary>
     public sealed class MatchSearch
@@ -71,13 +71,33 @@ namespace DefenseBattle.View
             IPvpLink link = null;
             try
             {
-                string code = null;
-                if (m.Host) (link, code) = await m_links.Host();
-                MatchState st = await m_server.Ready(m.MatchId, code ?? "");
+                MatchState st;
+                if (m.Host)
+                {
+                    string code;
+                    (link, code) = await m_links.Host();
+                    st = await m_server.Ready(m.MatchId, code);
+                }
+                else
+                {
+                    // 손님은 Relay 에 들어간 뒤에 준비한다 - 준비하는 순간 서버가 시작을 정하므로, 그 전에 실패하면 경기가 취소된다 (패배 아님)
+                    st = await m_server.Ping(m.MatchId);
+                    while (st != null && st.Status == MatchState.Waiting && string.IsNullOrEmpty(st.RelayJoinCode))
+                    {
+                        if (cancelled() || m_clock() - t0 >= ReadyTimeout) { st = null; break; }
+                        await m_wait(PollInterval);
+                        if (cancelled()) { st = null; break; }
+                        st = await m_server.Ping(m.MatchId);
+                    }
+                    if (st != null && st.Status == MatchState.Waiting)
+                    {
+                        link = await m_links.Join(st.RelayJoinCode);
+                        st = await m_server.Ready(m.MatchId, "");
+                    }
+                }
                 while (true)
                 {
                     if (st == null || st.Status == MatchState.Cancelled || st.Status == MatchState.Done) break;
-                    if (link == null && !string.IsNullOrEmpty(st.RelayJoinCode)) link = await m_links.Join(st.RelayJoinCode);
                     if (st.Status == MatchState.Playing && link != null)
                         return new OnlineOpponent(m, Math.Max(0, (st.StartAt - st.Now) / 1000.0), m_server, link, m_clock);
                     if (cancelled() || m_clock() - t0 >= ReadyTimeout) break;

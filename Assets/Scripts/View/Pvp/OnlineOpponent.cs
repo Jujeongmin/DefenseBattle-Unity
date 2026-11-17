@@ -17,8 +17,9 @@ namespace DefenseBattle.View
         public const double PingInterval = 2;
         /// <summary>상대 스냅이 이만큼 없으면 이탈 승리 요청 (pvp.ts oppGraceMs 20초 + 0.5초)</summary>
         public const double AwayGrace = 20.5;
-        /// <summary>이탈 승리를 서버가 아직 안 받아 주면 다시 묻는 간격</summary>
+        /// <summary>이탈 승리를 서버가 아직 안 받아 주면 다시 묻는 첫 간격 - 거절이 이어지면 두 배씩 (ClaimRetryMax 까지)</summary>
         public const double ClaimRetry = 2;
+        public const double ClaimRetryMax = 16;
 
         readonly MatchInfo m_match;
         readonly IPvpServer m_server;
@@ -32,6 +33,7 @@ namespace DefenseBattle.View
         double m_pingAcc;
         double m_silent;
         double m_claimWait;
+        double m_claimGap = ClaimRetry;
         bool m_pinging;
         bool m_claiming;
         bool m_done;
@@ -66,6 +68,7 @@ namespace DefenseBattle.View
         {
             if (m_done || !PvpWire.ReadSnapshot(buf, len, m_recv)) return;
             m_silent = 0;
+            m_claimGap = ClaimRetry;
             Snapshot?.Invoke(m_recv);
         }
 
@@ -132,8 +135,10 @@ namespace DefenseBattle.View
             catch (Exception ex) { Debug.LogWarning("[Pvp] 이탈 승리 요청 실패: " + ex.Message); }
             finally
             {
+                // 연결만 끊기고 상대가 서버에 계속 있으면 거절이 이어진다 - 갈수록 드물게 묻는다
                 m_claiming = false;
-                m_claimWait = ClaimRetry;
+                m_claimWait = m_claimGap;
+                m_claimGap = Math.Min(ClaimRetryMax, m_claimGap * 2);
             }
         }
 

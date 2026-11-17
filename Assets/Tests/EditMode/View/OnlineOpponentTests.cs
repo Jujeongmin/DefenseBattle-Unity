@@ -228,6 +228,25 @@ namespace DefenseBattle.View.Tests
         }
 
         [UnityTest]
+        public IEnumerator ClaimRefusedRepeatedly_BacksOff()
+        {
+            // 연결만 끊기고 상대는 서버에 계속 있으면 서버가 계속 거절한다 - 갈수록 드물게 묻는다
+            var server = new FakeServer { ClaimReply = null };
+            var opp = new OnlineOpponent(Match(), 3, server, new FakeLink());
+            for (int i = 0; i < 21; i++) opp.Tick(1);
+            yield return Frames();
+            for (int i = 0; i < 60; i++)
+            {
+                opp.Tick(1);
+                yield return null;
+            }
+            yield return Frames();
+            int claims = server.Calls.FindAll(c => c == "claim").Count;
+            Assert.LessOrEqual(claims, 8, "60초 동안 2초마다(30번) 묻지 않는다");
+            Assert.GreaterOrEqual(claims, 3);
+        }
+
+        [UnityTest]
         public IEnumerator SnapshotsFlowing_DoesNotClaim()
         {
             var link = new FakeLink();
