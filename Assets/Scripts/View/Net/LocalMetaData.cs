@@ -13,8 +13,10 @@ namespace DefenseBattle.View
         public List<string> SeenFeatures = new List<string>();
         /// <summary>0 = 처음, 1 = 1-1 진행 중, 2 = 1-1 클리어 (main.ts meta.tutorial)</summary>
         public int Tutorial;
-        /// <summary>특가 id → 마지막 표시 시각 (ms)</summary>
+        /// <summary>특가 id → 마지막 표시 시각 (ms). 유닛 패키지 등장은 "pack:상품 id"</summary>
         public Dictionary<string, long> OfferShownAt = new Dictionary<string, long>();
+        /// <summary>떠 있는 한정 상품 id → 끝나는 시각 (ms) (meta.ts offers)</summary>
+        public Dictionary<string, long> Offers = new Dictionary<string, long>();
         public int StageFailStreak;
         /// <summary>승급 팝업용 (-1 = 아직 모름)</summary>
         public int ArenaMax = -1;
@@ -24,6 +26,7 @@ namespace DefenseBattle.View
         {
             if (SeenFeatures == null) SeenFeatures = new List<string>();
             if (OfferShownAt == null) OfferShownAt = new Dictionary<string, long>();
+            if (Offers == null) Offers = new Dictionary<string, long>();
             if (Daily == null || Daily.Date != today) Daily = new DailyProgress { Date = today };
             if (Daily.Progress == null) Daily.Progress = new Dictionary<string, int>();
         }

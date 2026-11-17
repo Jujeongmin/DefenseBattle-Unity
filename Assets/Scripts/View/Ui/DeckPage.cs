@@ -221,6 +221,15 @@ namespace DefenseBattle.View
             return s;
         }
 
+        /// <summary>보석 부족 → 결제 팝업 (로비가 연결, 없으면 안내만)</summary>
+        public Action<int, Job?> Shortage;
+
+        void Short(int need, Job? job)
+        {
+            if (Shortage != null) Shortage(need, job);
+            else m_toast.Show(Loc.Tl("보석이 부족해요"));
+        }
+
         async void Upgrade(Job job)
         {
             if (m_busy) return;
@@ -228,7 +237,7 @@ namespace DefenseBattle.View
             int lv = e.LevelOf(job);
             int need = Units.CardsNeeded(Units.Get(job).Rarity, lv);
             if (e.CardCount(job) < need) { m_toast.Show(Loc.Tl("카드 {0}장이 더 필요해요 · 상자와 뽑기에서 얻어요", need - e.CardCount(job))); return; }
-            if (e.Crystals < Units.UpgradeCost(lv)) { m_toast.Show(Loc.Tl("보석이 부족해요")); return; }
+            if (e.Crystals < Units.UpgradeCost(lv)) { Short(Units.UpgradeCost(lv) - e.Crystals, null); return; }
             if (await Server(CloudApi.UpgradeUnit, CloudClient.Args("job", job))) m_audio.Play(Sfx.Merge);
             Draw();
         }
@@ -237,7 +246,7 @@ namespace DefenseBattle.View
         {
             if (m_busy) return;
             int cost = u.UnlockCrystals ?? 0;
-            if (EconCache.State.Crystals < cost) { m_toast.Show(Loc.Tl("보석이 부족해요")); return; }
+            if (EconCache.State.Crystals < cost) { Short(cost - EconCache.State.Crystals, u.Job); return; } // 유닛 패키지를 먼저 제안
             m_modal.Confirm(Loc.Tl("유닛 해금"), Loc.Tl("{0}을(를) {1}{2}로 해금할까요?", Loc.Tl(u.Kr), Loc.Icon("gem"), cost), Loc.Tl("해금"), async ok =>
             {
                 if (!ok) return;

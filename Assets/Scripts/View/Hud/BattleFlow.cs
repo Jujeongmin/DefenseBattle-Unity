@@ -82,6 +82,14 @@ namespace DefenseBattle.View
             m_finishing = false;
             if (m_runner.Launch != l || m_runner.Game == null) return; // 기다리는 사이 로비로 나갔음
             ShowResult(ResultFlow.Final(d, l, o, EconCache.State));
+            // 결제 팝업 조건 (main.ts): 새 챕터 도달 / 2연속 실패 - 튜토리얼 1-1 판은 제외, 무한 모드는 없음
+            if (l.Kind == BattleLaunch.Mode.Stage && l.StageId != "1-1")
+            {
+                StageDef st = Campaign.Get(l.StageId);
+                StageDef next = st.Index + 1 < Campaign.Stages.Length ? Campaign.Stages[st.Index + 1] : null;
+                bool chapterUp = o.Stage != null && o.Stage.FirstClear && next != null && next.Chapter > st.Chapter;
+                m_lobby.Offers.AfterMatch(false, chapterUp, LocalMeta.Data.StageFailStreak >= 2);
+            }
         }
 
         void OnExit()

@@ -40,6 +40,7 @@ namespace DefenseBattle.View
         RankPage m_rank;
         ProfilePage m_profile;
         SettingsPage m_settings;
+        ProductBuy m_buy;
         bool m_busy;
         bool m_roadBusy;
         bool m_dirty;
@@ -49,6 +50,8 @@ namespace DefenseBattle.View
 
         public bool Visible => m_root.activeSelf;
         public Modal Modal => m_modal;
+        /// <summary>결제 팝업 (판 끝 특가·보석 부족)</summary>
+        public OfferPopup Offers { get; private set; }
 
         void Awake()
         {
@@ -58,8 +61,15 @@ namespace DefenseBattle.View
             m_campaign = new CampaignPages(m_catalog, m_panel, m_modal, m_toast, m_audio, Launch, () => m_dirty = true);
             m_deck = new DeckPage(m_catalog, m_panel, m_modal, m_toast, m_audio, () => m_dirty = true);
             m_reveal = new RevealPopup(this, m_popups, m_catalog, m_audio);
+            m_buy = new ProductBuy(m_toast, m_audio, m_reveal);
+            // 결제 팝업은 로비와 전투 결과 화면 위 모두에 뜬다 → 안내 글(Toast) 바로 아래 칸
+            RectTransform offerHost = Ui.Rect(m_toast.transform.parent, "OfferHost");
+            Ui.Fill(offerHost);
+            offerHost.SetSiblingIndex(m_toast.transform.GetSiblingIndex());
+            Offers = new OfferPopup(offerHost, m_catalog, m_buy, this);
             m_research = new ResearchPage(m_panel, m_toast, m_audio, () => m_dirty = true);
-            m_shop = new ShopPage(m_panel, m_modal, m_toast, m_audio, m_reveal, () => m_dirty = true);
+            m_research.Shortage = need => Offers.Shortage(need);
+            m_shop = new ShopPage(m_panel, m_modal, m_toast, m_audio, m_reveal, m_buy, Offers, () => m_dirty = true);
             m_quests = new QuestsPage(m_panel, m_toast, m_audio, () => m_dirty = true);
             m_road = new RoadPage(m_catalog, m_panel, () => m_dirty = true);
             m_pass = new PassPage(m_panel, m_toast, m_audio, () => m_dirty = true);
@@ -69,6 +79,8 @@ namespace DefenseBattle.View
             m_settings.OpenProfile = m_profile.Open;
             m_settings.ReplayTutorial = ReplayTutorial;
             m_campaign.OpenDeck = m_deck.Open; // 스테이지 정보 → 덱 편집 → 다시 스테이지 정보
+            m_deck.Shortage = (need, job) => Offers.Shortage(need, job);
+            m_pass.BuyPremium = () => m_buy.Buy("season_premium", ok => { if (ok) m_pass.Open(); });
             EconCache.Changed += OnEcon;
             Localization.Changed += OnEcon;
         }
@@ -426,7 +438,7 @@ namespace DefenseBattle.View
             m_modal.Confirm(waiting ? Loc.Tl("상자 대기 중") : Loc.Tl("바로 열기"), msg, Loc.Tl("확인"), async ok =>
             {
                 if (!ok) return;
-                if (EconCache.State.Crystals < cost) { m_toast.Show(Loc.Tl("보석이 부족해요")); return; }
+                if (EconCache.State.Crystals < cost) { Offers.Shortage(cost - EconCache.State.Crystals); return; }
                 ShowReveal(await Server<Reveal>(CloudApi.OpenSlot, CloudClient.Args("slot", i, "pay", true)));
             });
         }

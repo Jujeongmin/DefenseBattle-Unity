@@ -57,13 +57,21 @@ namespace DefenseBattle.View
             Ui.Size(b.gameObject, 170, 84);
         }
 
+        /// <summary>보석 부족 → 결제 팝업 (로비가 연결)</summary>
+        public Action<int> Shortage;
+
         async void Up(ResearchDef r)
         {
             if (m_busy) return;
             EconState e = EconCache.State;
             int lv = e.ResearchLevel(r.Key);
             if (lv >= r.Max) return;
-            if (e.Crystals < Core.Research.Cost(lv)) { m_toast.Show(Loc.Tl("보석이 부족해요")); return; }
+            if (e.Crystals < Core.Research.Cost(lv))
+            {
+                if (Shortage != null) Shortage(Core.Research.Cost(lv) - e.Crystals);
+                else m_toast.Show(Loc.Tl("보석이 부족해요"));
+                return;
+            }
             m_busy = true;
             try
             {

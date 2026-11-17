@@ -52,7 +52,7 @@ public static class BattleAssetsBuilder
             BuildFont(fonts + "FusionPixel-zh-hant.ttf", fonts + "FusionPixel-zh-hant SDF.asset", GlyphRenderMode.SDFAA, 36, 5),
         };
         var frames = new List<Sprite>();
-        foreach (string dir in new[] { Art + "UI/Frame", Art + "UI/Common" })
+        foreach (string dir in new[] { Art + "UI/Frame", Art + "UI/Common", Art + "UI/Shop" }) // Shop = 상품 그림 (이름 = 상품 id)
             foreach (string p in Directory.GetFiles(dir))
             {
                 if (p.EndsWith(".meta")) continue;

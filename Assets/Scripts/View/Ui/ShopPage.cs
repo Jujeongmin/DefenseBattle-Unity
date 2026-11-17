@@ -8,8 +8,8 @@ using UnityEngine.UI;
 namespace DefenseBattle.View
 {
     /// <summary>
-    /// 상점 (menu.ts openShop): 보석·보유 아이템, 유닛 뽑기(1회·10회, 뽑기권 먼저 + 모자란 만큼 보석), 확률 정보.
-    /// 상품(보석·패키지·상자 구매)은 8단계(상점·특가)에서 이 창에 붙는다.
+    /// 상점 (menu.ts openShop): 보석·보유 아이템, 무료 광고 뽑기권, 한정 특가, 유닛 뽑기(1회·10회, 뽑기권 먼저 + 모자란 만큼 보석),
+    /// 상자·추천 패키지·유닛 패키지·시즌 패스·부스터·보석 상품, 확률 정보. 결제는 ProductBuy (스토어 연결 전엔 '준비 중').
     /// </summary>
     public sealed class ShopPage
     {
@@ -18,19 +18,21 @@ namespace DefenseBattle.View
         readonly Toast m_toast;
         readonly BattleAudio m_audio;
         readonly RevealPopup m_reveal;
+        readonly ProductBuy m_buy;
+        readonly OfferPopup m_offers;
         readonly Action m_closed;
+        readonly List<ProductDef> m_active = new List<ProductDef>();
         bool m_busy;
 
-        /// <summary>상품 칸 (8단계가 채운다)</summary>
-        public Action<Transform> DrawProducts;
-
-        public ShopPage(Modal panel, Modal modal, Toast toast, BattleAudio audio, RevealPopup reveal, Action closed)
+        public ShopPage(Modal panel, Modal modal, Toast toast, BattleAudio audio, RevealPopup reveal, ProductBuy buy, OfferPopup offers, Action closed)
         {
             m_panel = panel;
             m_modal = modal;
             m_toast = toast;
             m_audio = audio;
             m_reveal = reveal;
+            m_buy = buy;
+            m_offers = offers;
             m_closed = closed;
         }
 
@@ -43,6 +45,15 @@ namespace DefenseBattle.View
             Ui.Line(body, Loc.Icon("gem") + " " + Ui.Num(e.Crystals), 34, Ui.Ink, TextAlignmentOptions.Center, true);
             string items = Loc.Icon("ticket") + e.Item(ItemKey.GachaTicket) + " · " + Loc.Icon("bag") + e.Item(ItemKey.GoldBooster);
             Ui.Line(body, Loc.Tl("보유: {0}", items), 22, Ui.Ink2, TextAlignmentOptions.Center, true);
+
+            if (RewardAds.Service.IsReady) FreeTickets(body, e);
+            long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            OfferRules.ActiveOffers(LocalMeta.Data.Offers, now, m_active);
+            if (m_active.Count > 0)
+            {
+                Section(body, Loc.Icon("timer") + " " + Loc.Tl("한정 특가"), null, false);
+                foreach (ProductDef o in m_active) Card(body, e, o.Id, true, now);
+            }
 
             Section(body, Loc.Tl("유닛 뽑기"), Loc.Tl("카드로 해금·레벨업"), true);
             RectTransform row = Ui.Rect(body, "Gacha");
@@ -61,7 +72,131 @@ namespace DefenseBattle.View
             }
             Ui.Line(body, rates.ToString(), 22, Ui.Ink2, TextAlignmentOptions.Center, true);
 
-            DrawProducts?.Invoke(body);
+            Section(body, Loc.Tl("상자"), null, true);
+            Card(body, e, "chest_gold", false, now);
+            Card(body, e, "chest_magic", false, now);
+            Card(body, e, "chest_legend", true, now);
+            Section(body, Loc.Tl("추천 패키지"), null, false);
+            if (!OfferRules.ProductOwned(e, "starter_pack", e.Season.Id)) Card(body, e, "starter_pack", true, now);
+            Card(body, e, "monthly_pass", true, now);
+            Card(body, e, "ad_remove", false, now);
+            bool packs = false;
+            foreach (KeyValuePair<Job, string> kv in Products.UnitPacks)
+            {
+                string pack = OfferRules.UnitPackAvailable(e, LocalMeta.Data.OfferShownAt, kv.Key, e.Season.Id);
+                if (pack == null) continue;
+                if (!packs) Section(body, Loc.Tl("유닛 패키지"), Loc.Tl("바로 해금 + Lv5"), false);
+                packs = true;
+                Card(body, e, pack, false, now);
+            }
+            Section(body, Loc.Tl("PvP 시즌 패스"), null, false);
+            Card(body, e, "season_premium", false, now);
+            Section(body, Loc.Tl("부스터"), Loc.Tl("캠페인·무한 모드 전용"), false);
+            Card(body, e, "gold_booster_pack", false, now);
+            Section(body, Loc.Tl("보석"), null, false);
+            GemGrid(body);
+        }
+
+        /// <summary>무료: 광고 보고 뽑기권 (서버 AdReward(false) - 하루 횟수는 서버가 센다)</summary>
+        void FreeTickets(Transform body, EconState e)
+        {
+            e.Counters.TryGetValue("adTicket:" + LocalMeta.Today, out int used);
+            int left = Math.Max(0, EconRules.AdTicketsPerDay - used);
+            Section(body, Loc.Tl("무료"), null, false);
+            Image row = Ui.Frame(body, "paper_dark", 1.8f, "Free");
+            Ui.Size(row.gameObject, -1, 110);
+            Ui.Row(row.transform, 14, 20, 16, 10, 12);
+            Image tv = Ui.Icon(row.transform, "tv", 52);
+            if (left > 0) Ui.Dot(tv.transform);
+            RectTransform info = Ui.Rect(row.transform, "Info");
+            Ui.Size(info.gameObject, -1, -1, 1);
+            Ui.Column(info, 2, 0, 0, 0, 0, TextAnchor.MiddleLeft);
+            Ui.Line(info, Loc.Tl("광고 보고 뽑기권 {0}장", EconRules.AdTicketAmount), 26, Ui.Cream, TextAlignmentOptions.Left);
+            Ui.Line(info, Loc.Tl("오늘 {0}회 남음", left), 20, Ui.Cream2, TextAlignmentOptions.Left);
+            Button b = Ui.Button(row.transform, "btn_blue", Loc.Tl("받기"), 24, AdTicket);
+            b.interactable = left > 0;
+            Ui.Size(b.gameObject, 150, 72);
+        }
+
+        void AdTicket()
+        {
+            if (m_busy) return;
+            m_busy = true;
+            RewardAds.Service.Show(async ok =>
+            {
+                int n = 0;
+                if (ok)
+                {
+                    try { n = await CloudClient.Econ<int>(CloudApi.AdReward, CloudClient.Args("doubleReward", false)); }
+                    catch (Exception ex) { Debug.LogWarning("[Shop] AdReward 실패: " + ex.Message); }
+                }
+                m_busy = false;
+                if (n > 0)
+                {
+                    m_audio.Play(Sfx.Coin);
+                    m_toast.Show(Loc.Tl("뽑기권 +{0} {1}", n, Loc.Icon("ticket")));
+                }
+                Draw();
+            });
+        }
+
+        /// <summary>상품 카드 한 줄 (그림 · 이름·배지·설명 · 가격 버튼). hot = 눈에 띄게</summary>
+        void Card(Transform body, EconState e, string id, bool hot, long now)
+        {
+            ProductDef p = Products.Get(id);
+            bool owned = OfferRules.ProductOwned(e, id, e.Season.Id);
+            Image card = Ui.Frame(body, hot ? "btn_purple" : "paper_dark", 1.8f, id);
+            Ui.Size(card.gameObject, -1, 140);
+            Ui.Row(card.transform, 12, 14, 16, 10, 10);
+            if (!owned) ProductUi.EffBadge(card.transform, p);
+            ProductUi.Picture(card.transform, p, 104);
+
+            RectTransform info = Ui.Rect(card.transform, "Info");
+            Ui.Size(info.gameObject, -1, -1, 1);
+            Ui.Column(info, 4, 0, 0, 0, 0, TextAnchor.MiddleLeft);
+            string title = Loc.Tl(p.Kr);
+            if (p.Badge != null) title += "  <size=70%><color=#ffc928>" + Loc.Tl(p.Badge) + "</color></size>";
+            if (id == "monthly_pass" && MetaRules.MonthlyActive(e, now))
+                title += "  <size=70%><color=#7cfc7c>" + Loc.Tl("{0}일 남음", MetaRules.MonthlyDaysLeft(e, now)) + "</color></size>";
+            if (p.Category == "offer")
+            {
+                long ms = OfferRules.MsLeft(LocalMeta.Data.Offers, id, now);
+                title += "  <size=70%><color=#ffc928>" + Loc.Icon("timer") + Loc.Tl("{0}시간 {1}분", ms / 3_600_000L, ms % 3_600_000L / 60_000L) + "</color></size>";
+            }
+            Ui.Line(info, title, 26, Ui.Cream, TextAlignmentOptions.Left);
+            string desc = p.Desc.Length == 0 ? "" : p.DescArg != null ? Loc.Tl(p.Desc, p.DescArg) : Loc.Tl(p.Desc);
+            Ui.Text(info, desc, 19, Ui.Cream2, TextAlignmentOptions.Left);
+
+            Button b = Ui.Button(card.transform, owned ? "btn_gray" : "btn_gold", owned ? Loc.Tl("보유 {0}", Loc.Icon("check")) : Store.Price(p), 24,
+                () => m_buy.Buy(id, _ => Draw()));
+            b.interactable = !owned;
+            Ui.Size(b.gameObject, 160, 76);
+        }
+
+        /// <summary>보석 상품 3칸 격자</summary>
+        void GemGrid(Transform body)
+        {
+            RectTransform grid = Ui.Rect(body, "Gems");
+            var g = grid.gameObject.AddComponent<GridLayoutGroup>();
+            g.cellSize = new Vector2(196, 236);
+            g.spacing = new Vector2(12, 12);
+            g.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            g.constraintCount = 3;
+            g.childAlignment = TextAnchor.UpperCenter;
+            foreach (ProductDef p in Products.All)
+            {
+                if (p.Category != "crystal") continue;
+                string id = p.Id;
+                Image cell = Ui.Frame(grid, "paper_dark", 1.8f, id);
+                Ui.Column(cell.transform, 4, 10, 10, 18, 12, TextAnchor.UpperCenter);
+                ProductUi.EffBadge(cell.transform, p);
+                RectTransform pic = Ui.Rect(cell.transform, "PicRow");
+                Ui.Size(pic.gameObject, -1, 96);
+                Ui.Row(pic, 0);
+                ProductUi.Picture(pic, p, 96);
+                Ui.Line(cell.transform, Loc.Tl(p.Kr), 22, Ui.Cream);
+                Ui.Size(Ui.Button(cell.transform, "btn_gold", Store.Price(p), 22, () => m_buy.Buy(id, _ => Draw())).gameObject, -1, 64);
+            }
         }
 
         /// <summary>제목 줄 (+ 확률 정보 버튼)</summary>
@@ -94,7 +229,7 @@ namespace DefenseBattle.View
             if (m_busy) return;
             EconState e = EconCache.State;
             (int useTix, int gems) = ShopRules.GachaCost(e.Item(ItemKey.GachaTicket), n);
-            if (e.Crystals < gems) { m_toast.Show(Loc.Tl("보석이 부족해요")); return; }
+            if (e.Crystals < gems) { m_offers.Shortage(gems - e.Crystals); return; }
             m_busy = true;
             Reveal r = null;
             try { r = await CloudClient.Econ<Reveal>(CloudApi.Gacha, CloudClient.Args("count", n, "ticket", useTix > 0)); }
