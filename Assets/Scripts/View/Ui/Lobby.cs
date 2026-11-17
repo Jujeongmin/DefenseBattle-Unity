@@ -488,6 +488,9 @@ namespace DefenseBattle.View
             Play?.Invoke(l);
         }
 
+        /// <summary>결과의 '다시 대전': 방금 받은 상자·로드 공개를 다 본 뒤 상대 찾기 (매칭 창이 공개를 가리거나 끊지 않게)</summary>
+        public void QuickMatchAfterReveals() => m_reveal.WhenDone(QuickMatch);
+
         /// <summary>대전 시작 (로비 버튼 · 결과의 '다시 대전'): 상대 찾기 → 대전</summary>
         public void QuickMatch()
         {

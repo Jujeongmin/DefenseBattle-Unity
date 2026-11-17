@@ -398,7 +398,8 @@ namespace DefenseBattle.View
             if (m_hint.Active)
             {
                 RectTransform card = null;
-                for (int i = 0; i < m_cardButtons.Length && card == null; i++) if (m_cardButtons[i].interactable) card = CardRect(i);
+                // 버튼 활성 상태(아래 반복문이 이번 프레임에 고친다)가 아니라 게임 상태로 - 카운트다운이 끝난 첫 프레임에 잠금이 풀리지 않게
+                for (int i = 0; i < m_cardIds.Length && card == null; i++) if (PvpRules.CanThrow(g, m_cardIds[i])) card = CardRect(i);
                 if (card == null && !counting) SummonLocked = false; // 던질 카드가 없으면 막아 둘 이유가 없다
                 m_hint.Tick(unscaledDt, card, m_peek.View, counting || g.Over);
             }
@@ -406,7 +407,7 @@ namespace DefenseBattle.View
             {
                 int card = m_cardIds[i];
                 double cd = g.AttackCooldown(card);
-                bool on = g.Gold >= g.AttackCost(card) && cd <= 0 && !g.Over && !counting;
+                bool on = PvpRules.CanThrow(g, card) && !counting;
                 if (m_cardButtons[i].interactable != on)
                 {
                     m_cardButtons[i].interactable = on;

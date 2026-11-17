@@ -35,6 +35,9 @@ namespace DefenseBattle.Core
                 BotProfile.Level(e.Deck, e.UnitLevels), r);
         }
 
+        /// <summary>몹 카드를 지금 던질 수 있나 (골드·쿨타임·판 끝) - 카운트다운은 화면 쪽에서 따로 막는다</summary>
+        public static bool CanThrow(Game g, int card) => !g.Over && g.Gold >= g.AttackCost(card) && g.AttackCooldown(card) <= 0;
+
         /// <summary>경과 시간 "m:ss"</summary>
         public static string Clock(double seconds)
         {

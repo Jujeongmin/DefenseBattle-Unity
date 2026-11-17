@@ -90,6 +90,7 @@ namespace DefenseBattle.View
             m_heroButton.onClick.AddListener(() => { m_audio.Play(Sfx.Button); HeroRequested?.Invoke(null, null); });
             m_exitButton.onClick.AddListener(() => { m_audio.Play(Sfx.Button); ExitRequested?.Invoke(); });
             m_summon.GoldShort += () => m_goldFlash = 0.15f;
+            m_summon.Blocked = () => m_pvpHud != null && (m_pvpHud.CountingDown || m_pvpHud.SummonLocked);
             // 소환음: 신화 이상이면 팡파르 (ui.ts audio.summon(gradeIndex >= mythic))
             m_summon.Summoned += u => m_audio.Play(u.GradeIndex >= (int)GradeKey.Mythic ? Sfx.Mythic : Sfx.Summon);
             m_stacks.MergeRequested += job => HeroRequested?.Invoke(job, true);

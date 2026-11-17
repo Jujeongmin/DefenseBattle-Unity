@@ -12,6 +12,9 @@ namespace DefenseBattle.View
     public sealed class BotOpponent : IPvpOpponent
     {
         readonly BotMatch m_bot;
+        readonly Func<Task<string>> m_start;
+        readonly Func<string, bool, Task<BotResultReply>> m_report;
+        Task<string> m_begin;
         string m_ticket;
         bool m_done;
 
@@ -22,8 +25,15 @@ namespace DefenseBattle.View
         public event Action<PvpOutcome> Finished;
 
         public BotOpponent(BotMatch bot, string nick, int trophies)
+            : this(bot, nick, trophies, StartOnServer, ReportOnServer) { }
+
+        /// <param name="start">봇전 시작 기록 → 기록 id (원본 pvpBotStart)</param>
+        /// <param name="report">(id, 내가 이겼나) → 서버 결과 (원본 pvpBotResult)</param>
+        public BotOpponent(BotMatch bot, string nick, int trophies, Func<Task<string>> start, Func<string, bool, Task<BotResultReply>> report)
         {
             m_bot = bot;
+            m_start = start;
+            m_report = report;
             Nick = nick;
             Trophies = trophies;
             bot.AttackSent += p => Attack?.Invoke(p);
@@ -43,10 +53,22 @@ namespace DefenseBattle.View
         public uint Seed => m_bot.Game.Opts.Seed;
         public BotMatch Match => m_bot;
 
-        public async Task Begin()
+        static async Task<string> StartOnServer() => (await CloudClient.Call<RunTicket>(CloudApi.PvpBotStart))?.Id;
+
+        static Task<BotResultReply> ReportOnServer(string id, bool won)
+            => CloudClient.Call<BotResultReply>(CloudApi.PvpBotResult, CloudClient.Args("id", id, "won", won));
+
+        public Task Begin()
         {
-            try { m_ticket = (await CloudClient.Call<RunTicket>(CloudApi.PvpBotStart))?.Id; }
+            if (m_begin == null) m_begin = SafeStart();
+            return m_begin;
+        }
+
+        async Task<string> SafeStart()
+        {
+            try { m_ticket = await m_start(); }
             catch (Exception ex) { Debug.LogWarning("[Pvp] 봇전 시작 기록 실패 - 트로피 미반영: " + ex.Message); }
+            return m_ticket;
         }
 
         public void Tick(double realDt) => m_bot.Tick(realDt);
@@ -65,11 +87,13 @@ namespace DefenseBattle.View
             m_done = true;
             m_bot.Stop();
             var o = new PvpOutcome { Won = playerWon, Trophies = EconCache.State.Pvp.Trophies };
+            // 시작 기록이 아직 오는 중이면 기다렸다가 보고한다 (느린 연결에서 일찍 나가도 패배가 기록되게 - 원본은 시작 기록 뒤에 판을 열었다)
+            if (m_begin != null) await m_begin;
             if (m_ticket != null)
             {
                 try
                 {
-                    BotResultReply r = await CloudClient.Call<BotResultReply>(CloudApi.PvpBotResult, CloudClient.Args("id", m_ticket, "won", playerWon));
+                    BotResultReply r = await m_report(m_ticket, playerWon);
                     if (r != null)
                     {
                         o.Delta = r.Delta;

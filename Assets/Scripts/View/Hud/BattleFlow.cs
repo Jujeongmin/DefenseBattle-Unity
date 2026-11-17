@@ -244,7 +244,7 @@ namespace DefenseBattle.View
                     break;
                 case ResultAction.Rematch:
                     ToLobby();
-                    m_lobby.QuickMatch();
+                    m_lobby.QuickMatchAfterReveals();
                     break;
                 case ResultAction.Close:
                     CloseResult();

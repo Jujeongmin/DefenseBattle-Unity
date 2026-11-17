@@ -44,6 +44,13 @@ namespace DefenseBattle.View
             if (m_open == null) Next();
         }
 
+        /// <summary>쌓인 공개를 다 본 뒤 (지금 없으면 바로)</summary>
+        public void WhenDone(Action a)
+        {
+            if (m_open == null) { a?.Invoke(); return; }
+            m_done += a;
+        }
+
         public void Close()
         {
             m_queue.Clear();

@@ -1,0 +1,128 @@
+using System;
+using System.Collections;
+using System.Threading.Tasks;
+using DefenseBattle.Core;
+using NUnit.Framework;
+using UnityEngine.TestTools;
+
+namespace DefenseBattle.View.Tests
+{
+    /// <summary>대전 연결 (main.ts startPvp): 카운트다운, 결과 한 번만, 패배 뒤 6초 안전장치, 나가기</summary>
+    public class PvpDuelTests
+    {
+        sealed class FakeOpponent : IPvpOpponent
+        {
+            public string Nick => "봇";
+            public int Trophies => 0;
+            public uint Seed => 1;
+            public event Action<AttackPayload> Attack;
+            public event Action<BoardSnapshot> Snapshot;
+            public event Action<PvpOutcome> Finished;
+            public int Defeats, Leaves, Ticks;
+            public Task Begin() => Task.CompletedTask;
+            public void Tick(double realDt) => Ticks++;
+            public void SendAttack(AttackPayload p) { }
+            public void SendSnapshot(BoardSnapshot s) { }
+            public void ReportDefeat() => Defeats++;
+            public void Leave() => Leaves++;
+            public void Finish(bool won) => Finished?.Invoke(new PvpOutcome { Won = won, Delta = won ? 30 : -10 });
+            public void Unused() { Attack?.Invoke(default); Snapshot?.Invoke(null); }
+        }
+
+        static Game NewGame() => new Game(new GameOptions { Mode = GameMode.Pvp, RandomSeed = 1 });
+
+        [Test]
+        public void Countdown_PausesUntilThreeSeconds()
+        {
+            Game g = NewGame();
+            var opp = new FakeOpponent();
+            var duel = new PvpDuel(g, opp);
+            int go = 0;
+            duel.Go += () => go++;
+            duel.Tick(2.9);
+            Assert.IsTrue(g.Paused);
+            Assert.IsTrue(duel.CountingDown);
+            Assert.AreEqual(0, opp.Ticks, "상대도 카운트다운 동안 멈춤");
+            duel.Tick(0.2);
+            Assert.IsFalse(g.Paused);
+            Assert.AreEqual(1, go);
+            duel.Tick(0.1);
+            Assert.AreEqual(1, opp.Ticks);
+        }
+
+        [Test]
+        public void Finished_Twice_ResultOnce()
+        {
+            var opp = new FakeOpponent();
+            var duel = new PvpDuel(NewGame(), opp);
+            int results = 0;
+            duel.Result += _ => results++;
+            opp.Finish(true);
+            opp.Finish(true);
+            Assert.AreEqual(1, results);
+        }
+
+        [Test]
+        public void MyLoss_NoReply_FallbackAfterSixSeconds_ThenLateReplyIgnored()
+        {
+            Game g = NewGame();
+            var opp = new FakeOpponent();
+            var duel = new PvpDuel(g, opp);
+            PvpOutcome got = null;
+            int results = 0;
+            duel.Result += o => { got = o; results++; };
+            duel.Tick(PvpDuel.CountdownSec + 0.1);
+            g.PvpEnd(false, "test"); // 내 전장이 무너짐
+            Assert.AreEqual(1, opp.Defeats);
+            duel.Tick(PvpDuel.ResultTimeout - 0.5);
+            Assert.AreEqual(0, results, "아직 기다리는 중");
+            duel.Tick(1);
+            Assert.AreEqual(1, results);
+            Assert.IsFalse(got.Won);
+            Assert.AreEqual(0, got.Delta, "서버 결과가 없으면 트로피 변화 없음");
+            opp.Finish(true);
+            Assert.AreEqual(1, results, "늦게 온 결과는 무시");
+        }
+
+        [Test]
+        public void Leave_ReportsDefeatOnce()
+        {
+            var opp = new FakeOpponent();
+            var duel = new PvpDuel(NewGame(), opp);
+            int results = 0;
+            duel.Result += _ => results++;
+            duel.Leave(true);
+            duel.Leave(true);
+            Assert.AreEqual(1, opp.Defeats);
+            Assert.GreaterOrEqual(opp.Leaves, 1);
+            opp.Finish(false);
+            Assert.AreEqual(0, results, "나간 뒤엔 결과 화면 없음");
+        }
+
+        [UnityTest]
+        public IEnumerator BotOpponent_DefeatBeforeStartRecord_WaitsForTicket()
+        {
+            var ticket = new TaskCompletionSource<string>();
+            string reportedId = null;
+            bool? reportedWon = null;
+            var bot = PvpRules.MakeBot(EconState.Fresh("S2026-11"), 5u, new SystemRandom());
+            var opp = new BotOpponent(bot, "봇", 0, () => ticket.Task, (id, won) =>
+            {
+                reportedId = id;
+                reportedWon = won;
+                return Task.FromResult<BotResultReply>(null);
+            });
+            int finished = 0;
+            opp.Finished += _ => finished++;
+            _ = opp.Begin();
+            opp.ReportDefeat(); // 시작 기록이 오기 전에 나감 (느린 연결)
+            yield return null;
+            Assert.IsNull(reportedId, "기록 id 를 받기 전엔 보고하지 않는다");
+            ticket.SetResult("t1");
+            for (int i = 0; i < 5 && finished == 0; i++) yield return null;
+            Assert.AreEqual("t1", reportedId, "id 를 받은 뒤 패배를 보고한다");
+            Assert.AreEqual(false, reportedWon);
+            Assert.AreEqual(1, finished);
+        }
+    }
+}

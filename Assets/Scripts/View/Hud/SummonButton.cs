@@ -14,6 +14,8 @@ namespace DefenseBattle.View
         Button m_button;
 
         public Game Game { get; set; }
+        /// <summary>지금 소환을 막나 (대전 카운트다운·첫 대전 던지기 안내 - ui.ts summonLock · countingDown). 탭 경로는 Button 활성 상태를 보지 않으므로 여기서 막는다</summary>
+        public Func<bool> Blocked;
         /// <summary>골드가 모자라 소환 못 함</summary>
         public event Action GoldShort;
         /// <summary>소환됨</summary>
@@ -23,7 +25,7 @@ namespace DefenseBattle.View
 
         public void OnPointerDown(PointerEventData e)
         {
-            if (Game == null || !m_button.interactable) return;
+            if (Game == null || !m_button.interactable || IsBlocked) return;
             m_hold.PointerDown();
         }
 
@@ -32,7 +34,7 @@ namespace DefenseBattle.View
 
         public void OnPointerClick(PointerEventData e)
         {
-            if (Game == null) return;
+            if (Game == null || IsBlocked) return;
             bool ok = m_hold.Click(Game);
             Report(ok ? 1 : 0);
         }
@@ -40,8 +42,11 @@ namespace DefenseBattle.View
         void Update()
         {
             if (Game == null || !m_hold.Holding) return;
+            if (IsBlocked) { m_hold.Release(); return; }
             Report(m_hold.Tick(Time.unscaledDeltaTime, Game));
         }
+
+        bool IsBlocked => Blocked != null && Blocked();
 
         void Report(int summoned)
         {
