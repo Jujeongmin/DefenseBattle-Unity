@@ -24,7 +24,7 @@ namespace DefenseBattle.View
         readonly RectTransform m_safe, m_top, m_board, m_progress, m_controls;
         readonly SpriteCatalog m_cat;
         readonly char[] m_buf = new char[64];
-        float m_boardBottom, m_boardTop, m_progressBottom, m_progressTop, m_controlsTop;
+        float m_boardBottom, m_boardTop, m_controlsTop;
 
         RectTransform m_vs, m_cards, m_countRoot;
         RectTransform m_meFill, m_oppFill;
@@ -92,8 +92,6 @@ namespace DefenseBattle.View
             m_controls = (RectTransform)m_safe.Find("Controls");
             m_cat = cat;
             m_boardBottom = m_board.offsetMin.y;
-            m_progressBottom = m_progress.offsetMin.y;
-            m_progressTop = m_progress.offsetMax.y;
             m_controlsTop = m_controls.offsetMax.y;
             m_boardTop = m_board.offsetMax.y;
         }
@@ -300,12 +298,23 @@ namespace DefenseBattle.View
         /// <summary>대전이면 VS 줄·카드 줄만큼 전장을 줄이고, 아니면 원래 배치</summary>
         void Layout(bool pvp)
         {
-            float shift = pvp ? CardsHeight : 0;
-            m_progress.offsetMin = new Vector2(m_progress.offsetMin.x, m_progressBottom + shift);
-            m_progress.offsetMax = new Vector2(m_progress.offsetMax.x, m_progressTop + shift);
-            m_board.offsetMin = new Vector2(m_board.offsetMin.x, m_boardBottom + shift);
+            // 대전에선 아래 진행 막대를 숨기고(위 VS 막대가 내 몹 수를 보여 준다) 그 자리까지 전장으로 (style.css #game-frame.pvp #progress-row)
+            m_progress.gameObject.SetActive(!pvp);
+            m_board.offsetMin = new Vector2(m_board.offsetMin.x, pvp ? m_controlsTop + CardsHeight : m_boardBottom);
             m_board.offsetMax = new Vector2(m_board.offsetMax.x, m_boardTop - (pvp ? VsHeight : 0)); // 대전이 아니면 처음 값 그대로
+            // 전장이 정사각형이라 남는 양옆은 어두운 갈색 (style.css #game-frame.pvp #battlefield background #3b2416)
+            Camera cam = m_runner.Camera;
+            if (cam != null)
+            {
+                if (pvp && !m_camSaved) { m_camColor = cam.backgroundColor; m_camSaved = true; }
+                if (pvp) cam.backgroundColor = PvpBackdrop;
+                else if (m_camSaved) cam.backgroundColor = m_camColor;
+            }
         }
+
+        static readonly Color32 PvpBackdrop = new Color32(0x3b, 0x24, 0x16, 255);
+        Color m_camColor;
+        bool m_camSaved;
 
         void OnThrown()
         {
