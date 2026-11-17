@@ -26,9 +26,10 @@
 
 ## 2. AdMob - 새 앱
 1. 앱 추가 → Android, Play 스토어 등록 전이면 "아니요"로 만들고 나중에 연결.
-2. **보상형 광고 단위 3개**: `reward_double`(결과 보상 2배), `reward_revive`(실패 시 부활), `reward_ticket`(하루 3회 뽑기권).
-3. 앱 ID → Unity `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings`, 광고 단위 ID → `Assets/Scripts/Ads/AdMobRewardedAdService.cs` (PC 작업 때 같이 바꾼다 - 지금 값은 예전 앱 것).
-4. 개인정보·동의 → GDPR 동의 메시지 만들기 (기존 앱과 같은 방식).
+2. **보상형 광고 단위 1개** (결과 보상 2배·부활·하루 3회 뽑기권이 같은 광고 단위를 쓴다).
+3. 앱 ID(`ca-app-pub-…~…`)와 광고 단위 ID(`ca-app-pub-…/…`)는 저장소에 넣지 않는다 → 7번 `release.local.json` 에 적는다.
+   저장소의 `GoogleMobileAdsSettings` 는 Google 테스트 앱 ID 그대로 두고, 릴리스 빌드 동안만 실제 값으로 바뀐다.
+4. 개인정보·동의 → GDPR 동의 메시지 만들기 (`Assets/Scripts/Ads/AdConsentManager.cs` 가 UMP 로 띄운다).
 
 ## 3. Unity Cloud - 프로젝트 연결 (완료 2026-11-16: 조직 anjshdkdl99, 프로젝트 ID `8dad958b-a0aa-45ae-852d-40249312c36d`, 환경 `production`)
 1. <https://cloud.unity.com> → 새 프로젝트 "Defense Battle".
@@ -100,3 +101,28 @@ Play Console 인앱 상품에 아래 가격으로 등록한다 (부가세 포함
 | crystal_15000 | 보석 15,000 | ₩119,000 | 151% |
 
 원본과 다른 점: 시즌 패스 가격 인하, 한정 상품 보상을 효율 약 200% 로 낮춤, 뽑기권 묶음(`summon_ticket_pack`)·판매 중단 상품(`mythic_ticket`)은 팔지 않음.
+
+## 7. 출시 순서 (사용자)
+코드·문서 쪽 준비는 끝 (2026-11-17). 아래는 계정·비밀값이 필요한 일이다.
+
+1. **업로드 키스토어 만들기** - Unity **Edit → Project Settings → Player → Android → Publishing Settings → Keystore Manager** 에서 새로 만들거나
+   `keytool -genkeypair -v -keystore defensebattle-upload.keystore -alias upload -keyalg RSA -keysize 2048 -validity 10000`.
+   저장소 밖에 두고 백업한다 (잃어버리면 Play Console 에서 업로드 키 재설정 요청). 예전 앱 키스토어는 쓰지 않는다.
+2. **`release.local.json`** - `docs/release.local.example.json` 을 프로젝트 루트에 복사해 키스토어 경로·별칭, AdMob 앱 ID·보상형 광고 단위 ID 를 채운다 (gitignore 됨).
+3. **비밀번호 환경변수** - Windows 사용자 환경변수 `DB_KEYSTORE_PASS` (키 별칭 비밀번호가 다르면 `DB_KEYALIAS_PASS`). Unity 를 다시 켜지 않아도 읽는다.
+4. **Play 게임즈 설정 교체** - 1-4 에서 받은 리소스 XML·웹 클라이언트 ID 로 Unity **Window → Google Play Games → Setup → Android setup** 을 다시 한다
+   (지금 `ProjectSettings/GooglePlayGameSettings.txt`·`Assets/GPGSIds.cs`·`Assets/Plugins/Android/GooglePlayGamesManifest.androidlib` 은 예전 앱 값이라 덮어써야 한다).
+5. **빌드** - Unity 메뉴 **Tools → Defense Battle → Build Release AAB** → `Builds/defensebattle-v1.aab`. 값이 빠지면 빌드를 멈추고 무엇이 없는지 알려 준다.
+   (비밀값 없이 빌드만 확인: **Build Test AAB** - 디버그 키·테스트 광고라 올릴 수 없다.)
+6. **Play Console** - 내부 테스트 트랙에 AAB 업로드 → 1-2 인앱 상품 만들기(결제 권한이 든 빌드가 있어야 만들 수 있다) → 6번 가격 → 테스터 추가 →
+   1-3 라이선스 키를 4-4 Secret 에 → 4-2 Play 게임즈 → 5번 기기 확인 + 아래 실시간 대전 확인.
+7. **스토어 등록정보** - 문구 `docs/store-listing.md` (5개 언어), 그래픽 `docs/store/` (아이콘 512, 그래픽 이미지 1024x500, 스크린샷 5장),
+   개인정보처리방침 URL: `docs/privacy-policy.html` 을 공개 주소에 올린다 (예: GitHub Pages). 데이터 보안 양식은 방침 2번 표대로.
+8. 콘텐츠 등급 설문 · 광고 포함 · 확률형 아이템 고지(`docs/store-listing.md` 끝) → 프로덕션 출시 검토 요청.
+
+### 실시간 대전 기기 확인 (휴대폰 2대, 내부 테스트 빌드)
+1. 두 기기에서 같은 시각에 '대전 시작' → 8초 안에 서로 매칭, VS 에 상대 닉네임, 같은 순간 시작.
+2. 상대 미니맵이 움직이고, 던진 몹이 상대 판에 떨어진다.
+3. 한쪽 판이 무너지면 양쪽에 승패와 트로피가 서버대로 (승 +30 안팎, 패 -20).
+4. 판 도중 한쪽이 '나가기' → 다른 쪽 승리. 한쪽이 앱을 내리고 20초 넘게 있으면 남은 쪽 승리, 돌아온 쪽은 패배 결과.
+5. 한 기기만 '대전 시작' → 8초 뒤 봇 대전.

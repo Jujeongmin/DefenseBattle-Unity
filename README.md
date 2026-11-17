@@ -5,16 +5,16 @@
 유닛을 소환·합성해 몰려오는 몹을 막고, 대전에서는 몹 카드를 상대 전장에 던져 무너뜨리는 1:1 실시간 디펜스 대전 게임.
 웹판 [디펜스 배틀](https://github.com/Jujeongmin/DefenseBattle)(Verse8)의 기획을 Unity(Android)로 옮겨 **새 앱으로** 출시하기 위한 저장소다.
 
-> **지금 상태:** 게임 규칙(엔진·데이터·봇·경제)과 서버(UGS Cloud Code)는 이식·검증 완료. **화면(씬)은 아직 작업 전**이라
-> `Assets/Scenes` 의 MainScene/GameScene 은 예전 '운빨 랜덤 디펜스' 그대로다. 진행 계획은
-> [`docs/superpowers/specs/2026-10-19-defense-battle-port-design.md`](docs/superpowers/specs/2026-10-19-defense-battle-port-design.md).
+> **지금 상태 (2026-11-17):** 게임(전투·캠페인·무한·메타·봇 대전·실시간 대전)과 서버(UGS Cloud Code), 결제·로그인 연결, 출시 자료까지 끝났다.
+> 남은 것은 계정이 필요한 출시 작업(AdMob·Play Console·키스토어·기기 확인) - 순서는 [`docs/ugs-setup.md`](docs/ugs-setup.md) 7번.
+> 진행 기록은 [`docs/superpowers/specs/2026-10-19-defense-battle-port-design.md`](docs/superpowers/specs/2026-10-19-defense-battle-port-design.md).
 
 | 항목 | 값 |
 | --- | --- |
 | 앱 | 디펜스 배틀 · `com.jeonja.defensebattle` · 1.0 (1) · Android API 25 ~ 36 |
 | 엔진 | Unity 6000.4.0f1, 2D URP, IL2CPP, 세로 화면 |
-| 서버 | Unity Gaming Services - Authentication(Google Play), Cloud Save, Cloud Code(C# 모듈), Leaderboards, Economy(영수증 검증), Relay |
-| 수익화 | Google Play 결제(원화), AdMob 보상형 광고 3곳 (전면 광고 없음) |
+| 서버 | Unity Gaming Services - Authentication(익명 + Google Play 게임즈), Cloud Save, Cloud Code(C# 모듈: 경제·영수증 검증·매칭·결과), Leaderboards, Relay(실시간 대전) |
+| 수익화 | Google Play 결제(원화, 서버 영수증 검증), AdMob 보상형 광고 (전면·배너 없음) |
 | 언어 | 한국어 · English · 日本語 · 简体中文 · 繁體中文 |
 
 ## 게임
@@ -29,14 +29,14 @@
 
 | 단계 | 내용 | 상태 |
 | --- | --- | --- |
-| 0 | 세팅 - 앱 정보, 에셋(픽셀아트·사운드·폰트) 복사·임포트 자동 설정, Unity MCP | 대부분 완료 (UGS 대시보드는 사용자 작업) |
-| 1 | 게임 규칙 순수 C# 이식 (`Assets/Scripts/Core`) | **완료** - 테스트 61개, 원본 시뮬레이터와 밸런스 일치 |
-| 2 | 전투 화면 (Battle 씬) | 다음 작업 |
-| 3 | 로비·메타 (Boot / Lobby 씬, 덱·상자·상점 …) | |
-| 4 | 봇 대전 화면 | |
-| 5 | UGS 연동 | 서버 **완료** (`CloudCode/`, 테스트 33개) · 앱 쪽 연결 남음 |
-| 6 | 실시간 PvP (Relay) | |
-| 7 | 출시 준비 | |
+| 0 | 세팅 - 앱 정보, 에셋 복사·임포트 자동 설정, Unity MCP | 완료 |
+| 1 | 게임 규칙 순수 C# 이식 (`Assets/Scripts/Core`) | 완료 - 원본 시뮬레이터와 밸런스 일치 |
+| 2 | 전투 화면 | 완료 |
+| 3 | 로비·메타 (덱·상자·상점·연구·퀘스트·시즌 패스·랭킹) | 완료 |
+| 4 | 봇 대전 | 완료 |
+| 5 | UGS 연동 (서버 권위 경제, 결제 영수증 검증, Play 게임즈 로그인) | 완료 - 기기 결제 확인 남음 |
+| 6 | 실시간 PvP (Relay) | 완료 - 에디터 2개로 확인, 휴대폰 2대 확인 남음 |
+| 7 | 출시 준비 (비밀값 분리, 아이콘·스토어 자료·문구·개인정보처리방침, 빌드) | 완료 - 계정 작업은 사용자 |
 
 ## 구조
 
@@ -53,11 +53,15 @@ Assets/
 ├─ Audio/DefenseBattle/   효과음 16 · BGM 4
 ├─ Fonts/DefenseBattle/   Galmuri11 (한·영), Fusion Pixel (일·중)
 ├─ CloudCode/             Cloud Code 모듈 배포 설정 (.ccmr)
-├─ Scripts/Editor/        DefenseBattleArtImporter (픽셀아트 임포트 설정) 외 빌드 도구
-└─ Scripts/{Manager,UI,…} 예전 '운빨 랜덤 디펜스' 코드 - 새 씬이 동작하면 정리
+├─ Scripts/View/          화면·입력·서버 호출 (DefenseBattle.View 어셈블리 - 전투·로비·대전·결제 흐름)
+├─ Scripts/Platform/      기기 SDK 연결 (Unity IAP, Google Play 게임즈)
+├─ Scripts/Ads/           AdMob 보상형 광고·동의
+├─ Scripts/Editor/        임포트 설정, 씬·에셋 빌더, ReleaseBuilder(AAB), Cloud Code 배포, 2인스턴스 대전 도구
+└─ Scenes/Battle.unity    유일한 씬 (접속·로비·전투·대전을 한 씬의 오버레이로)
 CloudCode/                UGS Cloud Code C# 모듈 (서버 로직 Logic + UGS 어댑터 Ugs + 테스트)
 CoreTests/                Unity 없이 Core 를 컴파일·테스트·시뮬레이션하는 .NET 프로젝트
-docs/                     설계·세팅 문서
+docs/                     설계·세팅·출시 문서 (store/ 스토어 그림·스크린샷)
+Tools/                    번역 생성, 스토어 그림·개인정보처리방침 HTML 생성 스크립트
 ```
 
 ## 개발
@@ -79,7 +83,9 @@ dotnet run -c Release --project CoreTests/Sim -- prices      # 상점 가격·�
 - 밸런스: 원본과 같은 자동 플레이어로 비교 (무한 모드 연구 0 → MAX 평균 도달 웨이브 원본 39 / 44.5 / 46.6 / 49.3 / 50, 이식판 39.1 / 44.5 / 46.3 / 49.4 / 49.9).
 - 성능: 전투 1프레임 약 4~6µs, 프레임당 할당 사실상 0 (몹·이펙트 풀링).
 - 서버·스토어·광고 대시보드 세팅 순서와 원화 가격표: [`docs/ugs-setup.md`](docs/ugs-setup.md).
-- Google Play 게임즈·AdMob ID(`Assets/GPGSIds.cs`, `ProjectSettings/GooglePlayGameSettings.txt`, `Assets/Scripts/Ads/*`)는 아직 예전 앱 값이다 - 새 앱을 등록한 뒤 바꾼다.
+- Google Play 게임즈 설정(`Assets/GPGSIds.cs`, `ProjectSettings/GooglePlayGameSettings.txt`)은 아직 예전 앱 값이다 - 새 앱의 Play 게임즈를 만든 뒤 Setup 으로 덮어쓴다.
+- AdMob ID·키스토어는 저장소에 없다. 릴리스 빌드: `release.local.json` + 환경변수 `DB_KEYSTORE_PASS` → **Tools → Defense Battle → Build Release AAB** (자세히 `docs/ugs-setup.md` 7번).
+- 실시간 대전 확인: Multiplayer Play Mode 로 가상 플레이어를 켜면 `PvpCloneAutoplay`(에디터 전용)가 복제 쪽을 대기열에 넣는다 → 메인에서 '대전 시작'.
 
 ## 예전 앱 (운빨 랜덤 디펜스)
 
