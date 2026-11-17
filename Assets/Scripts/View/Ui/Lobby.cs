@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using DefenseBattle.Core;
@@ -114,15 +115,85 @@ namespace DefenseBattle.View
 
         public void Hide()
         {
+            if (m_guideCo != null) StopCoroutine(m_guideCo);
+            m_guideCo = null;
+            CloseGuide();
+            m_guideRetry = 0;
             m_modal.Close();
             m_panel.Close();
             m_reveal.Close();
             m_root.SetActive(false);
         }
 
+        // ======================= 로비 안내 (menu.ts maybeGuide) =======================
+        // 튜토리얼 뒤 새로 열린 기능 버튼을 하나씩 밝혀 준다 (대전 → 덱 → 캠페인 → 연구 → 퀘스트 → 무한). 본 것은 SeenFeatures
+        static readonly Dictionary<string, string> s_guideText = new Dictionary<string, string>
+        {
+            { "pvp", "<b>대전 시작</b>을 눌러 보세요!<br>상대 전장에 몹을 던지고, 이기면 상자를 받아요" },
+            { "units", "<b>덱</b>에서 유닛과 몹 카드를 고르고<br>모은 카드로 강화해요" },
+            { "campaign", "<b>캠페인</b>에서 스테이지를 깨면<br>새 유닛과 보석을 얻어요" },
+            { "research", "<b>연구소</b>가 열렸어요!<br>보석으로 대전과 모든 판의 능력을 올려요" },
+            { "quests", "<b>퀘스트</b>가 열렸어요!<br>매일 목표를 채우면 보석을 받아요" },
+            { "endless", "<b>무한 모드</b>가 열렸어요!<br>얼마나 오래 버티는지 도전해 보세요" },
+        };
+        readonly Dictionary<string, GameObject> m_guideTargets = new Dictionary<string, GameObject>();
+        readonly WaitForSecondsRealtime m_guideDelay = new WaitForSecondsRealtime(0.6f);
+        Spotlight m_spot;
+        bool m_guiding;
+        float m_guideRetry;
+
+        GameObject GuideTarget(string key) => m_guideTargets.TryGetValue(key, out GameObject go) && go != null ? go : null;
+
+        /// <summary>팝업·페이지가 떠 있으면 안내하지 않는다</summary>
+        bool Covered => m_panel.IsOpen || m_modal.IsOpen || Offers.IsOpen || m_reveal.Busy;
+
+        void MaybeGuide()
+        {
+            if (m_guiding || !Visible) return;
+            string key = GuideRules.NextLobbyGuide(EconCache.State, LocalMeta.Data.Tutorial, LocalMeta.Data.SeenFeatures, k => GuideTarget(k) != null);
+            if (key == null) return;
+            if (Covered) { m_guideRetry = 0.8f; return; } // 닫힐 때까지 기다렸다가
+            m_guiding = true;
+            m_guideCo = StartCoroutine(Guide(key));
+        }
+
+        Coroutine m_guideCo;
+
+        IEnumerator Guide(string key)
+        {
+            yield return m_guideDelay;
+            // 기다리는 사이 다른 창을 열었거나 판에 들어갔으면 다음 기회로
+            if (!Visible || Covered || GuideTarget(key) == null)
+            {
+                m_guiding = false;
+                m_guideCo = null;
+                m_guideRetry = 0.8f;
+                yield break;
+            }
+            m_spot = Spotlight.Create(m_popups.GetComponentInParent<CanvasScaler>());
+            bool done = false;
+            m_spot.Step(() => GuideTarget(key), Loc.Tl(s_guideText[key]), () => done = true);
+            while (!done && Visible) yield return null;
+            CloseGuide();
+            m_guideCo = null;
+            if (done) LocalMeta.MarkSeen(key);
+        }
+
+        void CloseGuide()
+        {
+            if (m_spot != null) m_spot.Close();
+            m_spot = null;
+            m_guiding = false;
+        }
+
         void Update()
         {
             if (!m_root.activeSelf) return;
+            if (m_guideRetry > 0)
+            {
+                m_guideRetry -= Time.unscaledDeltaTime;
+                if (m_guideRetry <= 0) MaybeGuide();
+            }
             if (m_dirty) Render();
             m_tick -= Time.unscaledDeltaTime;
             if (m_tick > 0) return;
@@ -156,8 +227,10 @@ namespace DefenseBattle.View
             RectTransform body = Ui.Scroll(col, out ScrollRect scroll);
             Ui.Size(body.parent.gameObject, -1, -1, -1, 1);
             Ui.Column(body, 12, 28, 28, 6, 16, TextAnchor.UpperCenter);
+            m_guideTargets.Clear();
             Body(body, e);
             Nav(col, e);
+            MaybeGuide();
         }
 
         void TopBar(Transform parent, EconState e)
@@ -245,6 +318,7 @@ namespace DefenseBattle.View
             Button battle = Ui.Button(card.transform, "btn_red", Loc.Icon("sword") + " " + Loc.Tl("대전 시작"), 40,
                 () => { LocalMeta.MarkSeen("pvp"); m_toast.Show(Loc.Tl("준비 중")); });
             Ui.Size(battle.gameObject, -1, 100);
+            m_guideTargets["pvp"] = battle.gameObject;
 
             RectTransform sub = Ui.Rect(card.transform, "Sub");
             Ui.Size(sub.gameObject, -1, 64);
@@ -321,16 +395,16 @@ namespace DefenseBattle.View
             bool allCleared = true;
             foreach (StageDef s in Campaign.Stages) if (!Progress.StageCleared(e, s.Id)) { allCleared = false; break; }
             string next = Progress.NextStageId(e);
-            ModeCard(row, "btn_green", "map", Loc.Tl("캠페인"),
+            m_guideTargets["campaign"] = ModeCard(row, "btn_green", "map", Loc.Tl("캠페인"),
                 allCleared ? Loc.Tl("{0} 모두 클리어", Loc.Icon("check")) : Loc.Tl("스테이지 {0}", next), false,
                 m_campaign.OpenStages);
             if (Progress.FeatureUnlocked(e, "endless"))
-                ModeCard(row, "btn_purple", "infinity", Loc.Tl("무한 모드"), Loc.Tl("최고 {0}웨이브", LocalMeta.Data.BestWave),
+                m_guideTargets["endless"] = ModeCard(row, "btn_purple", "infinity", Loc.Tl("무한 모드"), Loc.Tl("최고 {0}웨이브", LocalMeta.Data.BestWave),
                     LobbyRules.FeatureNew(e, LocalMeta.Data.SeenFeatures, "endless"),
                     () => { LocalMeta.MarkSeen("endless"); m_campaign.OpenEndless(); m_dirty = true; });
         }
 
-        void ModeCard(Transform row, string frame, string icon, string title, string desc, bool isNew, Action click)
+        GameObject ModeCard(Transform row, string frame, string icon, string title, string desc, bool isNew, Action click)
         {
             Button b = Ui.Button(row, frame, null, 0, click);
             Ui.Size(b.gameObject, -1, 132, 1);
@@ -339,6 +413,7 @@ namespace DefenseBattle.View
             Ui.Line(b.transform, title, 30, Ui.Cream);
             Ui.Line(b.transform, desc, 20, Ui.Cream2);
             if (isNew) Ui.NewTag(b.transform);
+            return b.gameObject;
         }
 
         void Nav(Transform parent, EconState e)
@@ -353,14 +428,14 @@ namespace DefenseBattle.View
             if (Progress.FeatureUnlocked(e, "units"))
             {
                 string dot = LobbyRules.UnitsDotKey(e);
-                NavButton(nav.transform, "helmet", Loc.Tl("덱"), LobbyRules.FeatureNew(e, seen, "units"), dot != null && !seen.Contains(dot),
+                m_guideTargets["units"] = NavButton(nav.transform, "helmet", Loc.Tl("덱"), LobbyRules.FeatureNew(e, seen, "units"), dot != null && !seen.Contains(dot),
                     () => { LocalMeta.MarkSeen("units"); if (dot != null) LocalMeta.MarkSeen(dot); m_deck.Open(); });
             }
             if (Progress.FeatureUnlocked(e, "research"))
-                NavButton(nav.transform, "flask", Loc.Tl("연구"), LobbyRules.FeatureNew(e, seen, "research"), false,
+                m_guideTargets["research"] = NavButton(nav.transform, "flask", Loc.Tl("연구"), LobbyRules.FeatureNew(e, seen, "research"), false,
                     () => { LocalMeta.MarkSeen("research"); m_research.Open(); });
             if (Progress.FeatureUnlocked(e, "quests"))
-                NavButton(nav.transform, "scroll", Loc.Tl("퀘스트"), LobbyRules.FeatureNew(e, seen, "quests"),
+                m_guideTargets["quests"] = NavButton(nav.transform, "scroll", Loc.Tl("퀘스트"), LobbyRules.FeatureNew(e, seen, "quests"),
                     MetaRules.QuestClaimable(e, LocalMeta.Data.Daily.Progress, LocalMeta.Today), // 공짜 보상이라 받을 때까지 계속
                     () => { LocalMeta.MarkSeen("quests"); m_quests.Open(); });
             if (Progress.FeatureUnlocked(e, "pvp"))
@@ -370,7 +445,7 @@ namespace DefenseBattle.View
             }
         }
 
-        void NavButton(Transform nav, string icon, string label, bool isNew, bool dot, Action click)
+        GameObject NavButton(Transform nav, string icon, string label, bool isNew, bool dot, Action click)
         {
             Button b = Ui.Hit(nav, () => { click(); m_dirty = true; }, label);
             Ui.Size(b.gameObject, -1, 96, 1);
@@ -379,6 +454,7 @@ namespace DefenseBattle.View
             Ui.Line(b.transform, label, 22, Ui.Cream);
             if (isNew) Ui.NewTag(b.transform);
             else if (dot) Ui.Dot(b.transform);
+            return b.gameObject;
         }
 
         void OpenShop() => m_shop.Open();

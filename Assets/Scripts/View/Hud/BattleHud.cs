@@ -101,6 +101,7 @@ namespace DefenseBattle.View
         /// <summary>판이 내려감: 지난 판을 놓는다 (리뷰: Stop 뒤에도 옛 Game 을 들고 있던 문제)</summary>
         void OnGameStopped()
         {
+            HideCoach();
             m_game = null;
             m_summon.Game = null;
         }
@@ -115,6 +116,7 @@ namespace DefenseBattle.View
 
         void OnGameStarted(Game g)
         {
+            HideCoach();
             m_game = g;
             m_summon.Game = g;
             m_stacks.Bind(g, m_runner.Catalog);
@@ -197,6 +199,7 @@ namespace DefenseBattle.View
                 m_stacks.MarkDirty();
             }
             m_stacks.Refresh(g, mask);
+            MaybeTip(g);
         }
 
         /// <summary>소환 로그 (최근 6줄) - 줄이 바뀐 때만</summary>
@@ -217,8 +220,92 @@ namespace DefenseBattle.View
             m_logText.Set(m_buf, n);
         }
 
+        // ---------- 튜토리얼 대상 ----------
+        public GameObject SummonTarget => m_summon.gameObject;
+        public GameObject HeroTarget => m_heroButton.gameObject;
+        public GameObject UpgradeTarget() => m_stacks.FirstUpgrade();
+
+        /// <summary>튜토리얼 판: 나가기 버튼을 숨긴다 (자리는 남겨 하단 배치가 그대로 - ui.ts visibility hidden)</summary>
+        public void SetExitHidden(bool hidden)
+        {
+            if (m_exitGroup == null) m_exitGroup = m_exitButton.gameObject.AddComponent<CanvasGroup>();
+            m_exitGroup.alpha = hidden ? 0 : 1;
+            m_exitGroup.interactable = m_exitGroup.blocksRaycasts = !hidden;
+        }
+
+        // ---------- 판 안 한 번씩 나오는 안내 (ui.ts maybeTip · coach) ----------
+        /// <summary>튜토리얼 스포트라이트가 떠 있는 동안 등 팁을 막는다</summary>
+        public bool TipsBlocked { get; set; }
+
+        void MaybeTip(Game g)
+        {
+            if (m_coachLeft > 0 || g.Over || g.Paused || TipsBlocked) return;
+            string tip = GuideRules.PickTip(m_runner.GapCount, g.Units.Count, g.Time, g.IsPvp, g.Wave, LocalMeta.Data.SeenFeatures);
+            if (tip == null) return;
+            LocalMeta.MarkSeen("tip:" + tip);
+            string text;
+            switch (tip)
+            {
+                case GuideRules.TipGap:
+                    text = Loc.Icon("warning") + " " + Loc.Tl("길의 <b>빨간 곳</b>은 유닛 공격이 닿지 않는 빈틈이에요.<br>유닛을 끌어 옮겨서 빈틈을 막아요");
+                    break;
+                case GuideRules.TipPeek:
+                    text = Loc.Tl("상대 전장을 <b>누르고 있으면</b>(PC는 마우스를 올리면)<br>크게 볼 수 있어요");
+                    break;
+                default:
+                    text = Loc.Tl("웨이브가 지날수록 몹 체력이 크게 늘어요.<br>후반엔 소환보다 <b>몹 카드로 상대를 압박</b>하는 게 효율적이에요");
+                    break;
+            }
+            ShowCoach(text, 6.5f);
+        }
+
+        /// <summary>전장 아래쪽 안내 말풍선 (처음 쓸 때 만든다)</summary>
+        public void ShowCoach(string text, float seconds)
+        {
+            if (m_coach == null)
+            {
+                Canvas canvas = GetComponentInParent<Canvas>();
+                Image bg = Ui.Frame(canvas.transform, "paper", 1.4f, "Coach");
+                m_coach = bg.rectTransform;
+                m_coach.anchorMin = m_coach.anchorMax = new Vector2(0.5f, 0.5f);
+                m_coach.pivot = new Vector2(0.5f, 0);
+                Ui.Column(bg.transform, 0, 26, 26, 18, 20, TextAnchor.MiddleCenter);
+                bg.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                m_coachText = Ui.Text(bg.transform, "", 26, Ui.Ink, TextAlignmentOptions.Center, true);
+            }
+            // 전장 아래쪽 가운데, 전장 너비의 90%
+            RectTransform board = m_runner.BoardArea;
+            var parent = (RectTransform)m_coach.parent;
+            Vector3[] c = s_corners;
+            board.GetWorldCorners(c);
+            Vector3 bl = parent.InverseTransformPoint(c[0]), br = parent.InverseTransformPoint(c[3]);
+            m_coach.anchoredPosition = new Vector2((bl.x + br.x) * 0.5f, bl.y + 16);
+            m_coach.sizeDelta = new Vector2((br.x - bl.x) * 0.9f, m_coach.sizeDelta.y);
+            m_coach.SetAsLastSibling();
+            m_coachText.text = text;
+            m_coach.gameObject.SetActive(true);
+            m_coachLeft = seconds;
+        }
+
+        public void HideCoach()
+        {
+            m_coachLeft = 0;
+            if (m_coach != null) m_coach.gameObject.SetActive(false);
+        }
+
+        static readonly Vector3[] s_corners = new Vector3[4];
+        RectTransform m_coach;
+        TextMeshProUGUI m_coachText;
+        float m_coachLeft;
+        CanvasGroup m_exitGroup;
+
         void Update()
         {
+            if (m_coachLeft > 0)
+            {
+                m_coachLeft -= Time.unscaledDeltaTime;
+                if (m_coachLeft <= 0) HideCoach();
+            }
             if (m_goldFlash <= 0) return;
             m_goldFlash -= Time.unscaledDeltaTime;
             bool on = m_goldFlash > 0;

@@ -1,5 +1,9 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using DefenseBattle.Core;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace DefenseBattle.View
 {
@@ -17,6 +21,7 @@ namespace DefenseBattle.View
         [SerializeField] Toast m_toast;
         [SerializeField] BattleAudio m_audio;
         [SerializeField] BootPanel m_boot;
+        [SerializeField] HeroPanel m_heroes;
 
         GameOverData m_last;
         bool m_pausedForConfirm;
@@ -40,7 +45,78 @@ namespace DefenseBattle.View
             Localization.Init(m_runner.Catalog);
             Ui.Sounds = () => m_audio.Play(Sfx.Button);
             m_audio.SwitchBgm(Bgm.Menu);
-            _ = m_boot.Run(() => { Profile.EnsureSynced(); ShowLobby(); });
+            _ = m_boot.Run(() =>
+            {
+                Profile.EnsureSynced();
+                // 처음 온 사람(1-1 을 아직 못 깸): 로비 없이 바로 1-1 튜토리얼 (main.ts boot)
+                if (!Progress.FeatureUnlocked(EconCache.State, "pvp")) OnChosen(new BattleLaunch(BattleLaunch.Mode.Stage, "1-1"));
+                else ShowLobby();
+            });
+        }
+
+        // ---------------- 1-1 첫 판 튜토리얼 (main.ts startTutorial) ----------------
+        // 게임을 멈춘 채 눌러야 할 곳만 밝혀 한 단계씩: 소환 3번(같은 유닛) → 영웅 → 합성 → 닫기 → 강화
+        Spotlight m_spot;
+        CanvasScaler m_scaler;
+        readonly WaitForSecondsRealtime m_stepGap = new WaitForSecondsRealtime(0.12f); // 클릭 결과가 화면에 반영될 시간
+
+        IEnumerator Tutorial(Game g)
+        {
+            Job job = g.Opts.Deck[0];
+            var common = new KeyValuePair<Job, GradeKey>(job, GradeKey.Common);
+            g.ScriptSummons(new[] { common, common, common });
+            g.Paused = true;
+            m_hud.TipsBlocked = true;
+            if (m_scaler == null) m_scaler = m_toast.GetComponentInParent<CanvasScaler>();
+            m_spot = Spotlight.Create(m_scaler);
+            var steps = new[]
+            {
+                new KeyValuePair<Func<GameObject>, string>(() => m_hud.SummonTarget, Loc.Tl("<b>소환</b>을 눌러 영웅을 불러요 ({0}20)", Loc.Icon("coin"))),
+                new KeyValuePair<Func<GameObject>, string>(() => m_hud.SummonTarget, Loc.Tl("한 번 더!")),
+                new KeyValuePair<Func<GameObject>, string>(() => m_hud.SummonTarget, Loc.Tl("하나 더 부르면 <b>합성</b>할 수 있어요")),
+                new KeyValuePair<Func<GameObject>, string>(() => m_hud.HeroTarget, Loc.Tl("같은 영웅 3명! <b>영웅</b>을 눌러요")),
+                new KeyValuePair<Func<GameObject>, string>(m_heroes.ReadyCard, Loc.Tl("눌러서 <b>합성</b> - 한 등급 위로!")),
+                new KeyValuePair<Func<GameObject>, string>(m_heroes.CloseTarget, Loc.Tl("창을 닫아요")),
+                new KeyValuePair<Func<GameObject>, string>(m_hud.UpgradeTarget, Loc.Tl("<b>강화</b>하면 그 직업이 모두 세져요")),
+            };
+            foreach (KeyValuePair<Func<GameObject>, string> s in steps)
+            {
+                bool done = false;
+                m_spot.Step(s.Key, s.Value, () => done = true);
+                while (!done)
+                {
+                    if (!Alive(g)) { EndTutorial(); m_tutorialCo = null; yield break; }
+                    yield return null;
+                }
+                yield return m_stepGap;
+            }
+            bool shown = false;
+            m_spot.Message(Loc.Tl("준비 끝! 몹이 길 끝에 쌓이지 않게 막아요"), 1.8f, () => shown = true);
+            while (!shown && Alive(g)) yield return null;
+            EndTutorial();
+            m_tutorialCo = null;
+            if (!Alive(g)) yield break;
+            g.Paused = false;
+            LocalMeta.Data.Tutorial = 1;
+            LocalMeta.Save();
+        }
+
+        bool Alive(Game g) => m_runner.Game == g && !g.Over;
+
+        Coroutine m_tutorialCo;
+
+        void StopTutorial()
+        {
+            if (m_tutorialCo != null) StopCoroutine(m_tutorialCo);
+            m_tutorialCo = null;
+            EndTutorial();
+        }
+
+        void EndTutorial()
+        {
+            if (m_spot != null) m_spot.Close();
+            m_spot = null;
+            m_hud.TipsBlocked = false;
         }
 
         void ShowLobby()
@@ -59,10 +135,14 @@ namespace DefenseBattle.View
             m_tutorialRun = l.Kind == BattleLaunch.Mode.Stage && l.StageId == "1-1" && !Progress.FeatureUnlocked(EconCache.State, "pvp");
             m_runner.StartGame(l);
             m_run.Begin(l, m_runner.Game);
+            m_hud.SetExitHidden(m_tutorialRun);
+            StopTutorial(); // 지난 판의 안내가 남아 있으면
+            if (l.Kind == BattleLaunch.Mode.Stage && l.StageId == "1-1" && LocalMeta.Data.Tutorial == 0) m_tutorialCo = StartCoroutine(Tutorial(m_runner.Game));
         }
 
         void OnGameOver(GameOverData d)
         {
+            m_hud.HideCoach();
             m_last = d;
             ResultView revive = ResultFlow.ForGameOver(d, m_runner.Game, RewardAds.Service.IsReady);
             if (revive != null) ShowResult(revive);
@@ -188,6 +268,7 @@ namespace DefenseBattle.View
 
         void ToLobby()
         {
+            StopTutorial();
             CloseResult();
             m_pausedForConfirm = false;
             m_finishing = false;

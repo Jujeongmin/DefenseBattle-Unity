@@ -1,6 +1,7 @@
 using System;
 using DefenseBattle.Core;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace DefenseBattle.View
 {
@@ -46,6 +47,17 @@ namespace DefenseBattle.View
         }
 
         public void MarkDirty() => m_dirty = true;
+
+        /// <summary>튜토리얼: 누를 수 있는 첫 강화 버튼 (없으면 null)</summary>
+        public GameObject FirstUpgrade()
+        {
+            for (int i = 0; i < m_cards.Length; i++)
+            {
+                Button b = m_cards[i].UpButton;
+                if (b.gameObject.activeInHierarchy && b.interactable) return b.gameObject;
+            }
+            return null;
+        }
 
         /// <summary>매 프레임 (mergeMask = 합성 가능 비트: 덱 칸*6 + 등급)</summary>
         public void Refresh(Game g, long mergeMask)

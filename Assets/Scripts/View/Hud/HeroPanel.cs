@@ -38,6 +38,18 @@ namespace DefenseBattle.View
 
         public bool IsOpen => m_root.activeSelf;
 
+        /// <summary>튜토리얼: 지금 합성할 수 있는 등급 카드 (없으면 null)</summary>
+        public GameObject ReadyCard()
+        {
+            if (!IsOpen || m_game == null || !m_logic.MergeMode) return null;
+            for (int gi = 0; gi < m_cards.Length && gi < Grades.Count - 1; gi++)
+                if (m_game.CanMerge(m_logic.Job, (GradeKey)gi)) return m_cards[gi].Button.gameObject;
+            return null;
+        }
+
+        /// <summary>튜토리얼: 닫기 버튼 (열려 있을 때만)</summary>
+        public GameObject CloseTarget() => IsOpen ? m_close.gameObject : null;
+
         void Awake()
         {
             m_runner.GameStarted += OnGameStarted;

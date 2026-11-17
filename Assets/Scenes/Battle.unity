@@ -6617,6 +6617,7 @@ MonoBehaviour:
   m_toast: {fileID: 1936641133}
   m_audio: {fileID: 1452579432}
   m_boot: {fileID: 2342526}
+  m_heroes: {fileID: 594135270}
 --- !u!4 &512474641
 Transform:
   m_ObjectHideFlags: 0

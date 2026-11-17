@@ -32,6 +32,8 @@ namespace DefenseBattle.View
 
         static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
+        public bool IsOpen => m_modal.IsOpen;
+
         /// <summary>판이 끝난 뒤 (결과 화면이 먼저 보이게 0.7초 뒤). 판마다 최대 하나: 승급 > 유닛 패키지 > 새 챕터 > 연패</summary>
         public void AfterMatch(bool tierUp, bool chapterUp, bool losing)
         {

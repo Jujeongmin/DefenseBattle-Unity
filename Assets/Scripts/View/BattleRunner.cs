@@ -41,6 +41,10 @@ namespace DefenseBattle.View
         public SpriteCatalog Catalog => m_catalog;
         public Camera Camera => m_camera;
         public Material SpriteMaterial => m_spriteMaterial;
+        /// <summary>전장이 그려지는 UI 칸</summary>
+        public RectTransform BoardArea => m_boardArea;
+        /// <summary>지금 길 위 사거리 빈틈 수 (BoardView 가 그릴 때 센 값 - 팁 조건)</summary>
+        public int GapCount => m_board != null ? m_board.GapCount : 0;
         /// <summary>애니메이션 시계 (render.ts this.t: 실제 초 × PlaySpeed)</summary>
         public double AnimTime { get; private set; }
 
