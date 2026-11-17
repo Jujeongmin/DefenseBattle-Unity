@@ -30,7 +30,7 @@ namespace DefenseBattle.View
         RectTransform m_meFill, m_oppFill;
         Image m_oppFillImage;
         CachedText m_meCount, m_oppCount, m_clock, m_count, m_oppNick, m_myNick, m_oppSub;
-        TextMeshProUGUI m_countSub;
+        TextMeshProUGUI m_countSub, m_meTag, m_oppTag, m_deckLabel;
         RectTransform m_oppDeck;
         Image[] m_oppDeckIcons;
         readonly int[] m_shownAtk = new int[OppFrame.MaxDeck], m_shownDeck = new int[OppFrame.MaxDeck];
@@ -110,11 +110,11 @@ namespace DefenseBattle.View
             RectTransform names = Ui.Rect(info, "Names");
             Ui.Size(names.gameObject, -1, 32);
             Ui.Row(names, 8, 0, 0, 0, 0, TextAnchor.MiddleLeft);
-            Tag(names, Loc.Tl("나"), MeFill);
+            m_meTag = Tag(names, MeFill);
             m_myNick = new CachedText(Flex(Ui.Line(names, "", 24, Ui.Cream, TextAlignmentOptions.Left)));
             m_clock = new CachedText(Fixed(Ui.Line(names, "VS", 26, Ui.Gold, TextAlignmentOptions.Center), 92));
             m_oppNick = new CachedText(Flex(Ui.Line(names, "", 24, Ui.Cream, TextAlignmentOptions.Right)));
-            Tag(names, Loc.Tl("상대"), OppFill);
+            m_oppTag = Tag(names, OppFill);
 
             RectTransform bars = Ui.Rect(info, "Bars");
             Ui.Size(bars.gameObject, -1, 26);
@@ -126,7 +126,7 @@ namespace DefenseBattle.View
             RectTransform deck = Ui.Rect(info, "Deck");
             Ui.Size(deck.gameObject, -1, 40);
             Ui.Row(deck, 4, 0, 0, 0, 0, TextAnchor.MiddleLeft);
-            Ui.Size(Ui.Line(deck, Loc.Tl("상대 카드"), 18, Ui.Cream2, TextAlignmentOptions.Left).gameObject, 96, -1);
+            m_deckLabel = Fixed(Ui.Line(deck, "", 18, Ui.Cream2, TextAlignmentOptions.Left), 96);
             m_oppDeck = Ui.Rect(deck, "Icons");
             Ui.Size(m_oppDeck.gameObject, -1, -1, 1);
             Ui.Row(m_oppDeck, 2, 0, 0, 0, 0, TextAnchor.MiddleLeft);
@@ -162,17 +162,19 @@ namespace DefenseBattle.View
             Ui.Fill(m_countRoot);
             Ui.Column(m_countRoot, 6, 0, 0, 0, 0, TextAnchor.MiddleCenter);
             m_count = new CachedText(Ui.Line(m_countRoot, "", 140, Ui.Gold));
-            m_countSub = Ui.Line(m_countRoot, Loc.Tl("몹을 보내 상대를 무너뜨리세요!"), 30, Ui.Cream);
+            m_countSub = Ui.Line(m_countRoot, "", 30, Ui.Cream);
         }
 
         static TextMeshProUGUI Flex(TextMeshProUGUI t) { Ui.Size(t.gameObject, -1, -1, 1); return t; }
         static TextMeshProUGUI Fixed(TextMeshProUGUI t, float w) { Ui.Size(t.gameObject, w, -1); return t; }
 
-        static void Tag(Transform parent, string text, Color32 c)
+        static TextMeshProUGUI Tag(Transform parent, Color32 c)
         {
             Image bg = Ui.Image(parent, null, c, "Tag");
             Ui.Size(bg.gameObject, 56, 28);
-            Ui.Fill(Ui.Line(bg.transform, text, 18, Ui.Cream).rectTransform, 2, 0, 2, 0);
+            TextMeshProUGUI t = Ui.Line(bg.transform, "", 18, Ui.Cream);
+            Ui.Fill(t.rectTransform, 2, 0, 2, 0);
+            return t;
         }
 
         static RectTransform Bar(Transform parent, Color32 fill, out CachedText count, out Image fillImage)
@@ -231,6 +233,11 @@ namespace DefenseBattle.View
             m_duel = duel;
             m_game = duel.Player;
             BuildCards(m_game);
+            // 고정 글자는 대전마다 지금 언어로 (설정에서 언어를 바꿀 수 있다)
+            m_meTag.text = Loc.Tl("나");
+            m_oppTag.text = Loc.Tl("상대");
+            m_deckLabel.text = Loc.Tl("상대 카드");
+            m_countSub.text = Loc.Tl("몹을 보내 상대를 무너뜨리세요!");
             m_myNick.Set("<noparse>" + myNick + "</noparse>");
             m_oppNick.Set("<noparse>" + duel.Opponent.Nick + "</noparse>");
             m_oppSub.Set(Loc.Icon("trophy") + duel.Opponent.Trophies);

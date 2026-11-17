@@ -15,6 +15,7 @@ namespace DefenseBattle.View
 
         readonly RectTransform m_parent;
         readonly RectTransform m_root, m_hand;
+        readonly TextMeshProUGUI m_text;
         readonly Vector3[] m_corners = new Vector3[4];
         float m_t;
 
@@ -31,7 +32,8 @@ namespace DefenseBattle.View
             b.anchorMax = new Vector2(0.85f, 0.5f);
             b.sizeDelta = new Vector2(0, 110);
             b.anchoredPosition = new Vector2(0, 40);
-            Ui.Fill(Ui.Text(b, Loc.Tl("카드를 끌어서<br><b>상대 전장</b>에 던지세요!"), 28, Ui.Ink, TextAlignmentOptions.Center, true).rectTransform, 16, 10, 16, 10);
+            m_text = Ui.Text(b, "", 28, Ui.Ink, TextAlignmentOptions.Center, true);
+            Ui.Fill(m_text.rectTransform, 16, 10, 16, 10);
             Image hand = Ui.Image(m_root, Ui.Cat.Icon("pointer"), Color.white, "Hand");
             hand.preserveAspect = true;
             m_hand = hand.rectTransform;
@@ -44,6 +46,7 @@ namespace DefenseBattle.View
         {
             Active = true;
             m_t = 0;
+            m_text.text = Loc.Tl("카드를 끌어서<br><b>상대 전장</b>에 던지세요!");
         }
 
         public void Hide()
