@@ -15,5 +15,7 @@ namespace DefenseBattle.View
         Next,
         /// <summary>이 스테이지 정보 창 (덱·부스터를 다시 고르고 시작)</summary>
         StageInfo,
+        /// <summary>대전 한 판 더 (로비 매칭부터)</summary>
+        Rematch,
     }
 }

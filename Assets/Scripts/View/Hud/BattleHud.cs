@@ -124,11 +124,15 @@ namespace DefenseBattle.View
             double saved = PlayerPrefs.GetFloat(SpeedKey, 1);
             m_speeds = EconCache.State.AdRemoved ? s_speeds3 : s_speeds2;
             m_speedIdx = Math.Max(0, Array.IndexOf(m_speeds, saved));
+            // 대전은 배속·일시정지가 없다 (ui.ts: btn-speed·btn-pause hidden in pvp)
+            if (g.IsPvp) m_speedIdx = 0;
+            m_speedButton.gameObject.SetActive(!g.IsPvp);
+            m_pauseButton.gameObject.SetActive(!g.IsPvp);
             g.Speed = m_speeds[m_speedIdx];
             m_speedText.text = g.Speed + "x";
             m_pauseIcon.sprite = m_runner.Catalog.Icon("pause");
             BattleLaunch l = m_runner.Launch;
-            m_stage.text = l.Kind == BattleLaunch.Mode.Stage ? l.StageId : Loc.Tl("무한");
+            m_stage.text = l.Kind == BattleLaunch.Mode.Stage ? l.StageId : l.Kind == BattleLaunch.Mode.Pvp ? "PvP" : Loc.Tl("무한");
             m_lastRace = (Race)(-1);
             m_mergeMask = -1;
             m_progress = -1;

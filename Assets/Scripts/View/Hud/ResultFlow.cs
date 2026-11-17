@@ -64,6 +64,45 @@ namespace DefenseBattle.View
             return v;
         }
 
+        /// <summary>
+        /// 대전 결과 (main.ts showPvpResult): 트로피 ±, 보석, 로드 보석·새 몹 카드, 이기면 상자(칸이 가득이면 안내).
+        /// 봇전도 실제 대전과 똑같이 보여 준다 (상대가 봇인지 드러내지 않음)
+        /// </summary>
+        public static ResultView ForPvp(PvpOutcome o, string oppNick, int wave, bool adReady)
+        {
+            var v = new ResultView
+            {
+                Win = o.Won,
+                Title = o.Won ? Loc.Tl("{0} 승리!", Loc.Icon("trophy")) : Loc.Tl("패배"),
+                Sub = oppNick + " · Wave " + wave,
+            };
+            v.Rewards.Add(Loc.Icon("trophy") + " " + (o.Delta >= 0 ? "+" : "") + o.Delta);
+            PvpRewardResult r = o.Reward;
+            int crystals = r?.Crystals ?? 0;
+            if (crystals > 0) v.Rewards.Add(Loc.Icon("gem") + " +" + crystals);
+            if (r != null)
+            {
+                foreach (RoadStep st in r.Road) if (st.Crystals > 0) v.Rewards.Add(Loc.Tl("{0} +{1} 로드", Loc.Icon("gem"), st.Crystals));
+                foreach (RoadStep st in r.Road) if (st.Attack != null) v.Rewards.Add(Loc.Tl("{0} 새 몹 카드!", Loc.Icon("skull")));
+                if (o.Won) v.Rewards.Add(r.Chest != null ? Loc.Icon("chest") + " " + Loc.Tl(Chests.Get(r.Chest.Value).Kr) : Loc.Tl("{0} 상자 칸 가득", Loc.Icon("chest")));
+                foreach (RoadStep st in r.Road)
+                    if (st.Unit != null) v.Extra = Loc.Tl("새 유닛 해금:") + " " + Loc.Tl(Units.Get(st.Unit.Value).Kr) + "\n" + Loc.Tl("덱에 넣어 보세요");
+            }
+            if (crystals > 0 && adReady) v.Buttons.Add(DoubleButton(crystals));
+            v.Buttons.Add(new ResultButton { Label = Loc.Tl("{0} 다시 대전", Loc.Icon("sword")), Style = ResultStyle.Red, Action = ResultAction.Rematch });
+            v.Buttons.Add(new ResultButton { Label = Loc.Tl("로비로"), Style = ResultStyle.Plain, Action = ResultAction.Lobby });
+            return v;
+        }
+
+        /// <summary>대전 도중 나가기 확인 (main.ts exitGame - 대전은 패배 처리)</summary>
+        public static ResultView PvpExitConfirm()
+        {
+            var v = new ResultView { Title = Loc.Tl("나가기"), Sub = Loc.Tl("지금 나가면 <b>패배</b> 처리됩니다.") };
+            v.Buttons.Add(new ResultButton { Label = Loc.Tl("나가기"), Style = ResultStyle.Red, Action = ResultAction.Lobby });
+            v.Buttons.Add(new ResultButton { Label = Loc.Tl("취소"), Style = ResultStyle.Plain, Action = ResultAction.Close });
+            return v;
+        }
+
         static ResultButton DoubleButton(int crystals) => new ResultButton
         {
             Label = Loc.Tl("{0} 광고 보고 보상 2배 ({1}+{2})", Loc.Icon("tv"), Loc.Icon("gem"), crystals),

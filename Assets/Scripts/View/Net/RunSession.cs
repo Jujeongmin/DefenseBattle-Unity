@@ -28,7 +28,8 @@ namespace DefenseBattle.View
             g.Progress += OnProgress;
             g.AchievementReached += OnAchievement;
             if (l.GoldBooster) _ = Safe(CloudClient.Econ<bool>(CloudApi.UseGoldBooster), false, "UseGoldBooster");
-            m_runId = Safe(StartRun(l), null, "RunStart");
+            // 대전은 서버가 PvpBotStart / PvpBotResult 로 따로 기록한다 (일일 퀘스트·업적 진행만 여기서)
+            m_runId = l.Kind == BattleLaunch.Mode.Pvp ? null : Safe(StartRun(l), null, "RunStart");
         }
 
         /// <summary>판을 내림 (로비로) - 기기 진행 저장</summary>

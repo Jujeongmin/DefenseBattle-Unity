@@ -133,9 +133,16 @@ namespace DefenseBattle.View
             m_lobby.Hide();
             // 첫 튜토리얼 판 (결과 반영 전에 판단)
             m_tutorialRun = l.Kind == BattleLaunch.Mode.Stage && l.StageId == "1-1" && !Progress.FeatureUnlocked(EconCache.State, "pvp");
+            EndDuel(false);
             m_runner.StartGame(l);
             m_run.Begin(l, m_runner.Game);
             m_hud.SetExitHidden(m_tutorialRun);
+            if (l.Kind == BattleLaunch.Mode.Pvp)
+            {
+                m_duel = new PvpDuel(m_runner.Game, l.Opponent);
+                m_duel.Result += OnPvpResult;
+                DuelStarted?.Invoke(m_duel);
+            }
             StopTutorial(); // 지난 판의 안내가 남아 있으면
             if (l.Kind == BattleLaunch.Mode.Stage && l.StageId == "1-1" && LocalMeta.Data.Tutorial == 0) m_tutorialCo = StartCoroutine(Tutorial(m_runner.Game));
         }
@@ -143,6 +150,7 @@ namespace DefenseBattle.View
         void OnGameOver(GameOverData d)
         {
             m_hud.HideCoach();
+            if (d.IsPvp) return; // 대전 결과는 PvpDuel 이 서버 판정을 받아 알린다
             m_last = d;
             ResultView revive = ResultFlow.ForGameOver(d, m_runner.Game, RewardAds.Service.IsReady);
             if (revive != null) ShowResult(revive);
@@ -176,6 +184,8 @@ namespace DefenseBattle.View
         {
             Game g = m_runner.Game;
             if (g == null || g.Over) { ToLobby(); return; }
+            // 대전은 멈추지 않는다 (상대는 계속 진행) - 나가면 패배
+            if (g.IsPvp) { m_pausedForConfirm = false; ShowResult(ResultFlow.PvpExitConfirm()); return; }
             // 확인 창이 떠 있는 동안 판을 멈춘다
             m_pausedForConfirm = !g.Paused;
             g.Paused = true;
@@ -231,6 +241,10 @@ namespace DefenseBattle.View
                 case ResultAction.Lobby:
                     ToLobby();
                     break;
+                case ResultAction.Rematch:
+                    ToLobby();
+                    m_lobby.QuickMatch();
+                    break;
                 case ResultAction.Close:
                     CloseResult();
                     if (g != null && m_pausedForConfirm) g.Paused = false;
@@ -266,8 +280,48 @@ namespace DefenseBattle.View
             });
         }
 
+        // ---------------- 대전 (main.ts startPvp · showPvpResult) ----------------
+        PvpDuel m_duel;
+        readonly List<Reveal> m_pendingReveals = new List<Reveal>();
+
+        /// <summary>대전 판이 열림 (PvP HUD·상대 미니맵이 붙는다)</summary>
+        public event Action<PvpDuel> DuelStarted;
+        /// <summary>대전 판이 내려감</summary>
+        public event Action DuelEnded;
+
+        void Update()
+        {
+            if (m_duel != null) m_duel.Tick(Time.deltaTime);
+        }
+
+        void OnPvpResult(PvpOutcome o)
+        {
+            Game g = m_runner.Game;
+            m_hud.HideCoach();
+            if (o.Reward != null) m_pendingReveals.AddRange(o.Reward.Reveals); // 로드 상자 등은 로비에서 공개
+            ShowResult(ResultFlow.ForPvp(o, m_duel != null ? m_duel.Opponent.Nick : "", g != null ? g.Wave : 0, RewardAds.Service.IsReady));
+            // 결제 팝업 조건 (main.ts): 새 아레나 승급 / 2연패
+            LocalMetaData m = LocalMeta.Data;
+            int arena = Arenas.IndexOf(EconCache.State.Pvp.Trophies);
+            bool tierUp = m.ArenaMax >= 0 && arena > m.ArenaMax;
+            if (arena > m.ArenaMax) { m.ArenaMax = arena; LocalMeta.Save(); }
+            m_lobby.Offers.AfterMatch(tierUp, false, !o.Won && EconCache.State.Pvp.LossStreak >= 2);
+        }
+
+        /// <summary>대전을 내린다. reportDefeat = 판 도중 나가 패배로 기록</summary>
+        void EndDuel(bool reportDefeat)
+        {
+            if (m_duel == null) return;
+            m_duel.Result -= OnPvpResult;
+            m_duel.Leave(reportDefeat);
+            m_duel = null;
+            DuelEnded?.Invoke();
+        }
+
         void ToLobby()
         {
+            Game pg = m_runner.Game;
+            EndDuel(pg != null && !pg.Over);
             StopTutorial();
             CloseResult();
             m_pausedForConfirm = false;
@@ -275,6 +329,8 @@ namespace DefenseBattle.View
             m_run.Abandon();
             m_runner.Stop();
             ShowLobby();
+            foreach (Reveal r in m_pendingReveals) m_lobby.ShowReveal(r);
+            m_pendingReveals.Clear();
         }
     }
 }

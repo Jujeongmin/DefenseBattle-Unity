@@ -13,6 +13,8 @@ namespace DefenseBattle.Core
         public readonly Game Game;
         public readonly BotPlayer Ai;
         public readonly double Skill;
+        /// <summary>봇 트로피 (상대 정보로 보여 준다)</summary>
+        public readonly int Trophies;
 
         /// <summary>봇이 플레이어에게 몹을 던짐 → 플레이어 Game.ReceiveAttack 에 넘긴다</summary>
         public event Action<AttackPayload> AttackSent;
@@ -42,6 +44,7 @@ namespace DefenseBattle.Core
         {
             IRandom r = rand ?? new SystemRandom();
             Skill = skill;
+            Trophies = trophies;
             List<Job> deck = BotProfile.Deck(trophies, r);
             var levels = new Dictionary<Job, int>();
             foreach (Job j in deck) levels[j] = unitLevel;

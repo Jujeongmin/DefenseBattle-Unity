@@ -42,6 +42,7 @@ namespace DefenseBattle.View
         ProfilePage m_profile;
         SettingsPage m_settings;
         ProductBuy m_buy;
+        MatchPopup m_match;
         bool m_busy;
         bool m_roadBusy;
         bool m_dirty;
@@ -63,6 +64,7 @@ namespace DefenseBattle.View
             m_deck = new DeckPage(m_catalog, m_panel, m_modal, m_toast, m_audio, () => m_dirty = true);
             m_reveal = new RevealPopup(this, m_popups, m_catalog, m_audio);
             m_buy = new ProductBuy(m_toast, m_audio, m_reveal);
+            m_match = new MatchPopup(m_modal, this, m_audio);
             // 결제 팝업은 로비와 전투 결과 화면 위 모두에 뜬다 → 안내 글(Toast) 바로 아래 칸
             RectTransform offerHost = Ui.Rect(m_toast.transform.parent, "OfferHost");
             Ui.Fill(offerHost);
@@ -119,6 +121,7 @@ namespace DefenseBattle.View
             m_guideCo = null;
             CloseGuide();
             m_guideRetry = 0;
+            m_match.Stop();
             m_modal.Close();
             m_panel.Close();
             m_reveal.Close();
@@ -316,7 +319,7 @@ namespace DefenseBattle.View
                 Ui.Line(card.transform, Loc.Tl("다음 보상") + " " + RoadText(next) + "  " + Loc.Icon("trophy") + next.At, 24, Ui.Ink2, TextAlignmentOptions.Center, true);
 
             Button battle = Ui.Button(card.transform, "btn_red", Loc.Icon("sword") + " " + Loc.Tl("대전 시작"), 40,
-                () => { LocalMeta.MarkSeen("pvp"); m_toast.Show(Loc.Tl("준비 중")); });
+                () => { LocalMeta.MarkSeen("pvp"); QuickMatch(); });
             Ui.Size(battle.gameObject, -1, 100);
             m_guideTargets["pvp"] = battle.gameObject;
 
@@ -483,6 +486,13 @@ namespace DefenseBattle.View
             if (m_busy) return;
             Hide();
             Play?.Invoke(l);
+        }
+
+        /// <summary>대전 시작 (로비 버튼 · 결과의 '다시 대전'): 상대 찾기 → 대전</summary>
+        public void QuickMatch()
+        {
+            if (m_busy || m_match.Busy) return;
+            m_match.Start(EconCache.State, opp => Launch(BattleLaunch.Pvp(opp)));
         }
 
         /// <summary>결과 화면 → 스테이지 정보 (다음 스테이지 / 다시 하기)</summary>
