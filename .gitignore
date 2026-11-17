@@ -99,3 +99,8 @@ crashlytics-build.properties
 
 # 에디터별 설정
 .vscode/
+
+# 릴리스 비밀값 (ReleaseBuilder)
+release.local.json
+/[Aa]ssets/Resources/AdUnits.txt
+/[Aa]ssets/Resources/AdUnits.txt.meta

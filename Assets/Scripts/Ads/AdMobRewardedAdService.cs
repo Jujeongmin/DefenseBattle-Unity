@@ -6,19 +6,16 @@ using UnityEngine;
 /// <summary>AdMob 보상형 광고 하나를 불러 두고 보여 준다 (RewardAdsBridge 가 전투 화면 RewardAds 에 연결)</summary>
 public sealed class AdMobRewardedAdService
 {
-#if UNITY_ANDROID
-    const string RealRewardedId = "ca-app-pub-4673017826771391/3563918015";
-    const string TestRewardedId = "ca-app-pub-3940256099942544/5224354917"; // Google 공식 테스트 리워드
-#elif UNITY_IOS
-    const string RealRewardedId = "ca-app-pub-3940256099942544/1712485313";
-    const string TestRewardedId = "ca-app-pub-3940256099942544/1712485313";
-#else
-    const string RealRewardedId = "unused";
-    const string TestRewardedId = "unused";
-#endif
-
-    // 개발 빌드에선 테스트 광고, 정식 빌드에선 실 광고
-    static string RewardedId => Debug.isDebugBuild ? TestRewardedId : RealRewardedId;
+    // 실제 광고 단위 ID 는 저장소에 없다 - 릴리스 빌드 동안만 Resources/AdUnits.txt 로 들어온다 (ReleaseBuilder).
+    // 없거나 개발 빌드면 Google 테스트 광고.
+    static string RewardedId
+    {
+        get
+        {
+            var file = Resources.Load<TextAsset>(DefenseBattle.View.AdUnitConfig.ResourceName);
+            return DefenseBattle.View.AdUnitConfig.RewardedId(file != null ? file.text : null, Debug.isDebugBuild);
+        }
+    }
 
     public static AdMobRewardedAdService Shared { get; } = new AdMobRewardedAdService();
 
