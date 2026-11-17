@@ -69,6 +69,27 @@ namespace DefenseBattle.Server.Tests
         }
 
         [Test]
+        public async Task Purchase_OneTimeAlreadyOwned_NotGrantedSoStoreRefunds()
+        {
+            var rig = new Rig();
+            PurchaseReply first = await rig.Server.RedeemPurchase("p1", "starter_pack", "ok:S1", "sig", 1200, "KRW");
+            Assert.IsTrue(first.Granted);
+            int crystals = first.Econ.Crystals;
+            // 다른 주문으로 또 삼 (스토어엔 소모형) → 지급하지 않음 = 기기가 주문을 확인하지 않아 Google 이 환불
+            PurchaseReply second = await rig.Server.RedeemPurchase("p1", "starter_pack", "ok:S2", "sig", 1200, "KRW");
+            Assert.IsFalse(second.Granted);
+            Assert.IsFalse(second.AlreadyGranted);
+            Assert.AreEqual(crystals, second.Econ.Crystals);
+            // 첫 주문이 다시 와도 (확인 전에 앱이 꺼짐) 이미 지급으로 확인되게
+            PurchaseReply replay = await rig.Server.RedeemPurchase("p1", "starter_pack", "dup:S1", "sig", 1200, "KRW");
+            Assert.IsTrue(replay.AlreadyGranted);
+            // 거절된 주문이 다시 와도 계속 거절 (이미 지급으로 바뀌지 않음)
+            PurchaseReply again = await rig.Server.RedeemPurchase("p1", "starter_pack", "dup:S2", "sig", 1200, "KRW");
+            Assert.IsFalse(again.Granted);
+            Assert.IsFalse(again.AlreadyGranted);
+        }
+
+        [Test]
         public async Task Purchase_GrantedOncePerOrder_RecoversAfterFailure()
         {
             var rig = new Rig();

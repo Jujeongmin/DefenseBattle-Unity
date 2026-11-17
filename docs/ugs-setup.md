@@ -37,7 +37,7 @@
 ## 4. Unity Gaming Services (대시보드)
 진행 (2026-11-16): Cloud Save 동작 확인(EconSync 호출 성공), Relay 사용 가능, 리더보드 `trophies` 생성(높은 순, Latest score, 리셋 없음),
 Cloud Code 모듈 `DefenseBattleCloud` 배포 완료 (에디터 메뉴 **Tools → Defense Battle → Deploy Cloud Code**).
-남은 것 (Play Console 이후, 사용자): 2번 Google Play 로그인, 4번 라이선스 키 Secret.
+남은 것 (Play Console 이후, 사용자): 2번 Google Play 로그인, 4번 라이선스 키 Secret, 5번 기기 확인.
 Economy 는 쓰지 않는다 - Unity 가 새 프로젝트의 Economy 가입을 받지 않는다 ("Economy is no longer accepting new project signups").
 대신 Cloud Code 가 영수증 서명을 직접 검사한다 (`CloudCode/Module/Logic/GooglePlayReceiptVerifier.cs`).
 
@@ -47,7 +47,7 @@ Economy 는 쓰지 않는다 - Unity 가 새 프로젝트의 Economy 가입을 �
    - ID `trophies`, 정렬 높은 순, **업데이트 방식: 마지막 점수 유지(Keep latest)** - 트로피는 내려가기도 해서 '최고 점수'로 하면 안 된다.
 4. **Cloud Code → Secrets**: 새 Secret `GOOGLE_PLAY_LICENSE_KEY` = 1-3 의 "Base64 인코딩 RSA 공개 키" (붙여 넣기만, 저장소에 커밋하지 않는다).
    서버가 이 키로 영수증 서명을 확인하고, 패키지명·상품 id·구매 완료 상태, 그리고 `obfuscatedAccountId` 가 그 플레이어의
-   `PurchaseTag.ForPlayer(플레이어 id)` 인지 본다 (기기는 결제할 때 이 값을 넣어야 한다 - 5단계 클라이언트 작업).
+   `PurchaseTag.ForPlayer(플레이어 id)` 인지 본다 (기기는 결제할 때 이 값을 넣는다 - `Assets/Scripts/Platform/UnityIapBackend.cs`).
    키가 없으면 모든 결제가 거절된다. 환불·취소는 알 수 없다 (필요하면 나중에 Play Developer API 로 보강).
 5. **Cloud Code**: 모듈은 Unity 에디터에서 배포한다 (PC 작업).
    - 에디터 메뉴 **Tools → Defense Battle → Deploy Cloud Code** (또는 Services → Deployment 창에서 `DefenseBattleCloud.ccmr` Deploy).
@@ -55,8 +55,20 @@ Economy 는 쓰지 않는다 - Unity 가 새 프로젝트의 Economy 가입을 �
    - 모듈 소스: `CloudCode/Module` (게임 규칙은 클라이언트와 같은 `Assets/Scripts/Core` 를 그대로 컴파일).
 
 ## 5. 확인
-- Cloud Code 대시보드에 `DefenseBattleCloud` 모듈과 함수 30여 개(EconSync, PvpQueue …)가 보이면 배포 성공.
-- 에디터에서 Google Play 로그인 → `EconSync` 호출 → Cloud Save 의 플레이어 Protected 데이터에 `econ` 이 생기면 연결 성공 (5단계 클라이언트 작업 때 확인).
+에디터에서 끝난 것 (2026-11-17): Cloud Code 배포(함수 30여 개), 익명 로그인 → EconSync, 가짜 스토어 결제 창(서버가 가짜 영수증을 거절해 지급 없음).
+아래는 Play Console 내부 테스트 트랙에 올린 빌드로 기기에서 확인한다 (테스트 계정을 Play Console **라이선스 테스트**에 넣으면 실제 결제 없이 산다).
+
+먼저 Unity 에서 한 번: **Window → Google Play Games → Setup → Android setup** 에 1-4 의 리소스 XML(Play Console Play 게임즈 → 설정 → "리소스 가져오기")과
+**웹 클라이언트 ID** 를 넣는다 (서버 인증 코드를 받으려면 웹 클라이언트 ID 가 있어야 한다).
+
+1. **로그인**: 첫 실행에 Play 게임즈 로그인 창 → 로그 `[UGS] 로그인 성공`. Play 게임즈를 거절해도 익명으로 들어가져야 한다.
+2. **결제**: 상점에서 `crystal_100` 구매 → 보석 +100, "구매 완료". 같은 주문이 두 번 지급되지 않는지 (상점 다시 열기·앱 재시작).
+   라이선스 키 Secret 이 없거나 틀리면 "결제가 완료되지 않았어요" 가 나오고, Google 이 3일 안에 자동 환불한다 (확인하지 않은 주문).
+3. **앱이 꺼진 결제**: 결제 승인 직후 앱을 강제 종료 → 다시 켜면 "결제한 상품이 지급되었어요" 와 함께 지급.
+4. **한 번만 파는 상품**: `starter_pack` 을 산 뒤 다시 사려 하면 서버가 거절 (스토어엔 소모형으로 등록돼 결제 창은 뜰 수 있다 - 이때 확인하지 않아 자동 환불).
+5. **기기 변경**: 기기 A 에서 진행(보석·트로피·닉네임 변경) → 기기 B(또는 앱 데이터 삭제 후)에서 같은 Google 계정으로 로그인 → 같은 PlayerId·보석·트로피·닉네임.
+6. **이미 쓰던 익명 계정**: Play 게임즈 없이(로그인 거절) 플레이 → 다음 실행에 로그인 허용 → 그 익명 진행에 Play 게임즈가 연결돼 그대로 유지
+   (그 Google 계정이 이미 다른 기기 진행에 연결돼 있으면 그 진행으로 바뀐다).
 
 ## 6. 원화 가격 (확정 2026-10-19)
 Play Console 인앱 상품에 아래 가격으로 등록한다 (부가세 포함). 코드 값: `Assets/Scripts/Core/Config/Products.cs` (`Krw`).
