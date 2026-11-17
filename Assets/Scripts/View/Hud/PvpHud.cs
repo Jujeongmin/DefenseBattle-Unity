@@ -63,6 +63,12 @@ namespace DefenseBattle.View
         readonly BattleRunner m_runner;
         OppBoardView m_oppView;
         OppPeek m_peek;
+        ThrowInput m_throw;
+        ThrowHint m_hint;
+
+        /// <summary>안내 글 (던지는 법) / 골드 배지 깜빡임 - BattleHud 가 넣는다</summary>
+        public Toast Toast;
+        public Action FlashGold;
 
         /// <summary>상대 전장 그림 / 미니맵 (처음 대전할 때 만든다)</summary>
         public OppBoardView OppView => m_oppView;
@@ -146,6 +152,10 @@ namespace DefenseBattle.View
             m_cards.offsetMax = new Vector2(0, m_controlsTop + CardsHeight);
             HorizontalLayoutGroup cl = Ui.Row(m_cards, 10, 14, 14, 8, 8);
             cl.childForceExpandWidth = true;
+
+            m_throw = new ThrowInput(this, m_safe, m_cat) { Toast = Toast, FlashGold = FlashGold };
+            m_throw.Thrown += OnThrown;
+            m_hint = new ThrowHint(m_safe);
 
             // 카운트다운 (전장 가운데)
             m_countRoot = Ui.Rect(m_board, "Countdown");
@@ -236,9 +246,15 @@ namespace DefenseBattle.View
             {
                 m_oppView = OppBoardView.Create(m_cat, m_runner.SpriteMaterial, m_runner.ShapeMaterial);
                 m_peek = OppPeek.Create(m_safe, OppSlot, m_board, m_oppView.Texture);
+                // HUD 위, 던지는 몹·안내 아래
+                m_peek.transform.SetSiblingIndex(m_cards.GetSiblingIndex() + 1);
             }
             m_oppView.Begin(duel.Opponent);
             m_peek.gameObject.SetActive(true);
+            m_throw.Bind(m_game);
+            // 첫 대전: 던지는 법 안내 + 한 번 던질 때까지 소환 잠금 (main.ts: wins + losses === 0)
+            SummonLocked = PvpRules.IsFirstMatch(EconCache.State);
+            if (SummonLocked) m_hint.Show(); else m_hint.Hide();
             m_vs.gameObject.SetActive(true);
             m_cards.gameObject.SetActive(true);
             m_countRoot.gameObject.SetActive(true);
@@ -257,6 +273,8 @@ namespace DefenseBattle.View
             m_duel = null;
             m_game = null;
             if (m_oppView != null) m_oppView.End();
+            if (m_throw != null) { m_throw.Bind(null); m_hint.Hide(); }
+            SummonLocked = false;
             if (m_peek != null) { m_peek.Aiming = false; m_peek.gameObject.SetActive(false); }
             if (m_vs == null) return;
             m_vs.gameObject.SetActive(false);
@@ -275,6 +293,15 @@ namespace DefenseBattle.View
             m_board.offsetMin = new Vector2(m_board.offsetMin.x, m_boardBottom + shift);
             m_board.offsetMax = new Vector2(m_board.offsetMax.x, -topH - (pvp ? VsHeight : 0));
         }
+
+        void OnThrown()
+        {
+            m_hint.Hide();
+            SummonLocked = false;
+        }
+
+        /// <summary>몹 카드 slot 을 지금 던질 수 있나</summary>
+        public bool CardEnabled(int slot) => slot >= 0 && slot < m_cardButtons.Length && m_cardButtons[slot].interactable;
 
         void OnGo()
         {
@@ -360,6 +387,14 @@ namespace DefenseBattle.View
             }
 
             bool counting = m_duel.CountingDown;
+            m_throw.Tick(unscaledDt);
+            if (m_hint.Active)
+            {
+                RectTransform card = null;
+                for (int i = 0; i < m_cardButtons.Length && card == null; i++) if (m_cardButtons[i].interactable) card = CardRect(i);
+                if (card == null && !counting) SummonLocked = false; // 던질 카드가 없으면 막아 둘 이유가 없다
+                m_hint.Tick(unscaledDt, card, m_peek.View, counting || g.Over);
+            }
             for (int i = 0; i < m_cardButtons.Length; i++)
             {
                 int card = m_cardIds[i];

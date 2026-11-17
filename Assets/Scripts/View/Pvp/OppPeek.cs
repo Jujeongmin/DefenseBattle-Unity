@@ -16,6 +16,7 @@ namespace DefenseBattle.View
         RawImage m_image;
         float m_t;          // 0 = 작게, 1 = 크게
         float m_hold = -1;  // 누르고 있는 시간
+        float m_shake;      // 던진 몹이 닿아 흔들리는 남은 시간
         bool m_pressed;
         readonly Vector3[] m_corners = new Vector3[4];
 
@@ -24,6 +25,9 @@ namespace DefenseBattle.View
         public bool Expanded => m_t >= 1;
         /// <summary>지금 보이는 미니맵 화면 칸 (던질 위치 계산용)</summary>
         public RectTransform View => m_rt;
+
+        /// <summary>던진 몹이 닿음 → 잠깐 흔들림 (ui.ts opp-canvas .hit)</summary>
+        public void Hit() => m_shake = 0.25f;
 
         public static OppPeek Create(RectTransform parent, RectTransform smallSlot, RectTransform board, Texture tex)
         {
@@ -78,9 +82,13 @@ namespace DefenseBattle.View
             float k = m_t * m_t * (3 - 2 * m_t);
             Vector2 c = Vector2.Lerp(a.center, big.center, k);
             float s = Mathf.Lerp(Mathf.Min(a.width, a.height), side, k);
+            if (m_shake > 0)
+            {
+                m_shake -= Time.unscaledDeltaTime;
+                c.x += Mathf.Sin(m_shake * 90f) * 5f;
+            }
             m_rt.anchoredPosition = c - m_parent.rect.center; // 부모 가운데 기준
             m_rt.sizeDelta = new Vector2(s, s);
-            if (m_t > 0 && m_rt.GetSiblingIndex() != m_parent.childCount - 1) m_rt.SetAsLastSibling();
         }
 
         Rect LocalRect(RectTransform r)
