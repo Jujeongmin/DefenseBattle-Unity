@@ -2,17 +2,21 @@ using System;
 using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
+using DefenseBattle.View;
 using UnityEngine;
 
 namespace DefenseBattle.Services
 {
     /// <summary>
     /// UGS 초기화와 로그인. 앱에서 한 번만 초기화하고, 이미 로그인돼 있으면 다시 하지 않는다.
-    /// 지금은 익명 로그인만 - Google Play Games 연동은 5단계 클라이언트 작업에서 붙인다.
+    /// 로그인·Play 게임즈 연결 순서는 AccountLink. Play 게임즈 코드는 기기 쪽(GpgsAuthCode)이 AuthCode 로 넣어 준다 (에디터는 없음 = 익명).
     /// </summary>
     public static class UgsSession
     {
         static Task s_signIn;
+
+        /// <summary>Play 게임즈 서버 인증 코드를 받는 함수 (한 번용 코드, 실패면 null). 없으면 익명 로그인만</summary>
+        public static Func<Task<string>> AuthCode;
 
         /// <summary>로그인된 플레이어 id. 로그인 전이면 null.</summary>
         public static string PlayerId =>
@@ -39,8 +43,8 @@ namespace DefenseBattle.Services
                 if (auth.IsSignedIn)
                     return;
 
-                await auth.SignInAnonymouslyAsync();
-                Debug.Log($"[UGS] 익명 로그인 성공 - PlayerId {auth.PlayerId}");
+                await new AccountLink(new UgsAuthOps(auth), Profile.ResetForAccountChange).Run(AuthCode);
+                Debug.Log($"[UGS] 로그인 성공 - PlayerId {auth.PlayerId}");
             }
             catch (Exception e)
             {

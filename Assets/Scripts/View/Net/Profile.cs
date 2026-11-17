@@ -6,7 +6,7 @@ using UnityEngine;
 namespace DefenseBattle.View
 {
     /// <summary>
-    /// 닉네임 (서버 SetNick 이 정한 이름을 기기에 기억). 서버는 닉네임을 돌려주는 함수가 없어 마지막으로 정한 값을 보관한다.
+    /// 닉네임 (서버 SetNick 이 정한 이름을 기기에 기억, 새 기기·계정 전환 때는 서버 GetNick 으로 받아 온다).
     /// 처음엔 원본 meta.ts 처럼 "용사1234" 를 만들고 서버에도 한 번 알린다 (대전 상대·랭킹에 같은 이름이 보이게).
     /// </summary>
     public static class Profile
