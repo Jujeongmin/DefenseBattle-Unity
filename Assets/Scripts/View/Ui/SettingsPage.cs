@@ -56,6 +56,8 @@ namespace DefenseBattle.View
 
             Row(body, "play", Loc.Tl("튜토리얼"), Loc.Tl("다시 하기"), () => ReplayTutorial?.Invoke());
             Row(body, "trophy", "<noparse>" + Profile.Nick + "</noparse>", Loc.Tl("프로필"), () => OpenProfile?.Invoke());
+            // 광고 동의가 필요한 지역이면 동의를 다시 고를 수 있게 (Google UMP 개인정보 옵션)
+            if (AdPrivacy.Available) Row(body, "lock", Loc.Tl("광고 개인정보 설정"), Loc.Tl("변경"), () => AdPrivacy.Show?.Invoke());
         }
 
         void Volume(Transform body, string icon, string label, float value, Action<float> set, bool sfx)

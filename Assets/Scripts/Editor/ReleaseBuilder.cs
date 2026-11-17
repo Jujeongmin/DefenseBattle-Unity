@@ -21,6 +21,7 @@ public static class ReleaseBuilder
     const string AdsSettingsPath = "Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset";
     const string AdUnitsPath = "Assets/Resources/" + AdUnitConfig.ResourceName + ".txt";
     const string Scene = "Assets/Scenes/Battle.unity";
+    const string GpgsSettingsPath = "ProjectSettings/GooglePlayGameSettings.txt";
 
     [Serializable]
     sealed class LocalSettings
@@ -50,26 +51,24 @@ public static class ReleaseBuilder
         return s;
     }
 
-    /// <summary>릴리스 빌드에 빠진 값 (비어 있으면 빌드 가능)</summary>
-    public static List<string> Missing(string keystorePath, string keyAlias, string keystorePass, string appId, string rewardedId)
-    {
-        var miss = new List<string>();
-        if (string.IsNullOrEmpty(keystorePath) || !File.Exists(keystorePath)) miss.Add("keystorePath (파일이 있어야 함)");
-        if (string.IsNullOrEmpty(keyAlias)) miss.Add("keyAlias");
-        if (string.IsNullOrEmpty(keystorePass)) miss.Add("환경변수 DB_KEYSTORE_PASS");
-        if (!AdUnitConfig.IsAppId(appId)) miss.Add("admobAppId (ca-app-pub-…~…)");
-        if (!AdUnitConfig.IsUnitId(rewardedId)) miss.Add("admobRewardedId (ca-app-pub-…/…)");
-        if (appId == AdUnitConfig.TestAppIdAndroid || rewardedId == AdUnitConfig.TestRewardedAndroid) miss.Add("실제 AdMob ID (지금 값은 Google 테스트 ID)");
-        return miss;
-    }
-
     [MenuItem("Tools/Defense Battle/Build Release AAB")]
     public static void BuildRelease()
     {
         LocalSettings s = Load();
         string pass = Env("DB_KEYSTORE_PASS");
         string aliasPass = Env("DB_KEYALIAS_PASS") ?? pass;
-        List<string> miss = Missing(s.keystorePath, s.keyAlias, pass, s.admobAppId, s.admobRewardedId);
+        var ads = AssetDatabase.LoadAssetAtPath<ScriptableObject>(AdsSettingsPath);
+        List<string> miss = ReleaseCheck.Missing(new ReleaseCheck.Input
+        {
+            KeystoreExists = !string.IsNullOrEmpty(s.keystorePath) && File.Exists(s.keystorePath),
+            KeyAlias = s.keyAlias,
+            KeystorePass = pass,
+            AdMobAppId = s.admobAppId,
+            RewardedId = s.admobRewardedId,
+            AdsSettingsFound = ads != null && new SerializedObject(ads).FindProperty("adMobAndroidAppId") != null,
+            PackageName = PlayerSettings.GetApplicationIdentifier(UnityEditor.Build.NamedBuildTarget.Android),
+            GpgsSettingsText = File.Exists(GpgsSettingsPath) ? File.ReadAllText(GpgsSettingsPath) : null,
+        });
         if (miss.Count > 0)
             throw new InvalidOperationException("릴리스 빌드에 필요한 값이 없습니다 (" + LocalConfig + " / 환경변수, docs/ugs-setup.md 출시 순서): " + string.Join(", ", miss));
         Build($"Builds/defensebattle-v{PlayerSettings.Android.bundleVersionCode}.aab", s.keystorePath, s.keyAlias, pass, aliasPass, s.admobAppId, s.admobRewardedId);

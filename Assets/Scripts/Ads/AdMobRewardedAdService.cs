@@ -24,16 +24,23 @@ public sealed class AdMobRewardedAdService
     bool m_showing;
     Action<bool> m_completion;
     bool m_rewardEarned;
+    bool m_initialized;
 
     public bool IsReady => !AdsRemoved && !m_showing && m_ad != null && m_ad.CanShowAd();
 
     AdMobRewardedAdService()
     {
 #if UNITY_ANDROID || UNITY_IOS
-        MobileAds.Initialize(status =>
+        // 광고 동의 확인(UMP)이 끝나고 광고를 요청해도 될 때만 초기화·첫 광고 요청
+        AdConsentManager.WhenCanRequestAds(() => MobileAds.Initialize(status =>
         {
-            if (status != null) MobileAdsEventExecutor.ExecuteInUpdate(Load);
-        });
+            if (status == null) return;
+            MobileAdsEventExecutor.ExecuteInUpdate(() =>
+            {
+                m_initialized = true;
+                Load();
+            });
+        }));
 #endif
     }
 
@@ -64,7 +71,7 @@ public sealed class AdMobRewardedAdService
 
     void Load()
     {
-        if (AdsRemoved || m_loading || m_showing || m_ad != null) return;
+        if (!m_initialized || AdsRemoved || m_loading || m_showing || m_ad != null) return;
         m_loading = true;
         RewardedAd.Load(RewardedId, new AdRequest(), (ad, error) =>
         {
