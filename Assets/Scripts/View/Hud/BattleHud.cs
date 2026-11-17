@@ -215,7 +215,7 @@ namespace DefenseBattle.View
         PvpHud m_pvpHud;
 
         /// <summary>대전 HUD (처음 대전할 때 만든다)</summary>
-        public PvpHud Pvp => m_pvpHud ?? (m_pvpHud = new PvpHud(m_runner) { Toast = m_toast, FlashGold = () => m_goldFlash = 0.15f, GoSound = () => m_audio.Play(Sfx.Send) });
+        public PvpHud Pvp => m_pvpHud ?? (m_pvpHud = new PvpHud(m_runner) { Toast = m_toast, FlashGold = () => m_goldFlash = 0.15f, GoSound = () => m_audio.Play(Sfx.Send), StageLabel = m_stage });
 
         public void ShowPvp(PvpDuel duel) => Pvp.Show(duel, Profile.Nick);
 
