@@ -31,6 +31,8 @@ namespace DefenseBattle.View
         static readonly Vector2[][] s_unit = new Vector2[MaxSegments + 1][];
 
         public int VertexCount => m_verts.Count;
+        /// <summary>도형 머티리얼 (상대 전장 그리기가 같은 것을 쓴다)</summary>
+        public Material Material => m_material;
 
         /// <summary>반지름(px)에 따른 원 분할 수 12~48</summary>
         public static int Segments(float r) => Mathf.Clamp(Mathf.CeilToInt(r * 0.6f), MinSegments, MaxSegments);

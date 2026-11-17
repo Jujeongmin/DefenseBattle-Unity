@@ -41,6 +41,7 @@ namespace DefenseBattle.View
         public SpriteCatalog Catalog => m_catalog;
         public Camera Camera => m_camera;
         public Material SpriteMaterial => m_spriteMaterial;
+        public Material ShapeMaterial => m_under != null ? m_under.Material : null;
         /// <summary>전장이 그려지는 UI 칸</summary>
         public RectTransform BoardArea => m_boardArea;
         /// <summary>지금 길 위 사거리 빈틈 수 (BoardView 가 그릴 때 센 값 - 팁 조건)</summary>

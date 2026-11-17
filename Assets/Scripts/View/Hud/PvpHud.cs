@@ -60,11 +60,20 @@ namespace DefenseBattle.View
         /// <summary>카드 누름·끌기·뗌 (ThrowInput 이 받는다)</summary>
         public event Action<int, PointerEventData> CardDown, CardDrag, CardUp;
 
-        /// <param name="board">전장 칸 (BattleRunner.BoardArea - 'BoardArea' 또는 그 안의 'Board')</param>
-        public PvpHud(RectTransform board, SpriteCatalog cat)
+        readonly BattleRunner m_runner;
+        OppBoardView m_oppView;
+        OppPeek m_peek;
+
+        /// <summary>상대 전장 그림 / 미니맵 (처음 대전할 때 만든다)</summary>
+        public OppBoardView OppView => m_oppView;
+        public OppPeek Peek => m_peek;
+
+        public PvpHud(BattleRunner runner)
         {
-            // HUD 안전 영역 = 'TopBar' 를 자식으로 가진 조상, 전장 칸 = 그 바로 아래 조상
-            Transform area = board;
+            m_runner = runner;
+            SpriteCatalog cat = runner.Catalog;
+            // HUD 안전 영역 = 'TopBar' 를 자식으로 가진 조상, 전장 칸 = 그 바로 아래 조상 (BoardArea 또는 그 안의 Board 에서 위로)
+            Transform area = runner.BoardArea;
             while (area.parent != null && area.parent.Find("TopBar") == null) area = area.parent;
             m_board = (RectTransform)area;
             m_safe = (RectTransform)area.parent;
@@ -223,6 +232,13 @@ namespace DefenseBattle.View
             m_clock.Set("VS");
             duel.Opponent.Snapshot += OnOppSnapshot;
             duel.Go += OnGo;
+            if (m_oppView == null)
+            {
+                m_oppView = OppBoardView.Create(m_cat, m_runner.SpriteMaterial, m_runner.ShapeMaterial);
+                m_peek = OppPeek.Create(m_safe, OppSlot, m_board, m_oppView.Texture);
+            }
+            m_oppView.Begin(duel.Opponent);
+            m_peek.gameObject.SetActive(true);
             m_vs.gameObject.SetActive(true);
             m_cards.gameObject.SetActive(true);
             m_countRoot.gameObject.SetActive(true);
@@ -240,6 +256,8 @@ namespace DefenseBattle.View
             }
             m_duel = null;
             m_game = null;
+            if (m_oppView != null) m_oppView.End();
+            if (m_peek != null) { m_peek.Aiming = false; m_peek.gameObject.SetActive(false); }
             if (m_vs == null) return;
             m_vs.gameObject.SetActive(false);
             m_cards.gameObject.SetActive(false);
