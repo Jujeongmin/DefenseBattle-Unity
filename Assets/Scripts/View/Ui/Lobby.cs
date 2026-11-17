@@ -86,15 +86,24 @@ namespace DefenseBattle.View
             m_pass.BuyPremium = () => m_buy.Buy("season_premium", ok => { if (ok) m_pass.Open(); });
             EconCache.Changed += OnEcon;
             Localization.Changed += OnEcon;
+            Store.Restored += OnRestored;
         }
 
         void OnDestroy()
         {
             EconCache.Changed -= OnEcon;
             Localization.Changed -= OnEcon;
+            Store.Restored -= OnRestored;
         }
 
         void OnEcon() => m_dirty = true;
+
+        /// <summary>지난번에 확인 못 한 결제가 지급됨 (main.ts boot: '결제한 상품이 지급되었어요') - 상자 상품이면 공개</summary>
+        void OnRestored(string productId, List<Reveal> reveals)
+        {
+            m_toast.Show(Loc.Tl("결제한 상품이 지급되었어요"));
+            foreach (Reveal r in reveals) ShowReveal(r);
+        }
 
         public void Show()
         {

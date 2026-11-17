@@ -25,7 +25,12 @@ namespace DefenseBattle.View
         {
             ProductDef p = Products.Get(productId);
             if (p == null || m_busy) return;
-            if (!Store.Ready) { m_toast.Show(Loc.Tl("준비 중")); return; }
+            if (!Store.Ready)
+            {
+                // 스토어 연결 전 (로그인 직후 잠깐) / 연결 실패 (오프라인·결제 불가 기기)
+                m_toast.Show(Store.ConnectFailed ? Loc.Tl("스토어에 연결할 수 없어요. 잠시 뒤 다시 시도해 주세요") : Loc.Tl("준비 중"));
+                return;
+            }
             m_busy = true;
             List<Reveal> got = null;
             try { got = await Store.Service.Buy(productId); }
