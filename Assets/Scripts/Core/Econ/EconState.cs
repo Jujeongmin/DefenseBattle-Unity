@@ -38,7 +38,9 @@ namespace DefenseBattle.Core
         /// <summary>PvP 몹 카드 덱 4장</summary>
         public List<AttackKey> AttackDeck = new List<AttackKey>(Attacks.Starter);
         public PvpStats Pvp = new PvpStats();
-        /// <summary>이미 처리한 결제·대전 id (같은 것을 두 번 지급하지 않게, 최근 MaxRecentIds 개)</summary>
+        /// <summary>지급한 결제 주문 id (전부 남긴다 - 영수증 서명은 계속 유효해서, 지우면 같은 영수증으로 다시 받을 수 있다)</summary>
+        public HashSet<string> Orders = new HashSet<string>();
+        /// <summary>이미 처리한 대전 id (같은 것을 두 번 지급하지 않게, 최근 MaxRecentIds 개). 예전 결제 기록 "buy:주문" 도 여기 있다</summary>
         public List<string> RecentIds = new List<string>();
 
         public const int MaxRecentIds = 500;

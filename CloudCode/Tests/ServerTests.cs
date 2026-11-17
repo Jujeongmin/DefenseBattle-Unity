@@ -69,6 +69,24 @@ namespace DefenseBattle.Server.Tests
         }
 
         [Test]
+        public async Task Purchase_ReplayAfterManyBattles_NotGrantedAgain()
+        {
+            var rig = new Rig();
+            PurchaseReply first = await rig.Server.RedeemPurchase("p1", "crystal_100", "ok:R1", "sig", 1200, "KRW");
+            Assert.IsTrue(first.Granted);
+            // 대전 결과 id 가 최근 기록을 다 밀어낸 뒤 같은 영수증을 다시 보냄 (영수증 서명은 계속 유효)
+            await rig.Store.MutatePlayer<EconRecord, bool>("p1", Keys.Econ, () => null, rec =>
+            {
+                for (int i = 0; i < EconState.MaxRecentIds + 10; i++) rec.Data.MarkProcessed("bot:" + i);
+                return true;
+            });
+            PurchaseReply replay = await rig.Server.RedeemPurchase("p1", "crystal_100", "ok:R1", "sig", 1200, "KRW");
+            Assert.IsFalse(replay.Granted);
+            Assert.IsTrue(replay.AlreadyGranted);
+            Assert.AreEqual(first.Econ.Crystals, replay.Econ.Crystals);
+        }
+
+        [Test]
         public async Task Purchase_OneTimeAlreadyOwned_NotGrantedSoStoreRefunds()
         {
             var rig = new Rig();
