@@ -54,6 +54,7 @@ namespace DefenseBattle.View
         }
 
         public uint Seed => m_bot.Game.Opts.Seed;
+        public double StartDelay => PvpDuel.CountdownSec;
         public BotMatch Match => m_bot;
 
         static async Task<string> StartOnServer() => (await CloudClient.Call<RunTicket>(CloudApi.PvpBotStart))?.Id;

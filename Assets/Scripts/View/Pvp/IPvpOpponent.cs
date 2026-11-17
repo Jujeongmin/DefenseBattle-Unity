@@ -14,6 +14,8 @@ namespace DefenseBattle.View
         int Trophies { get; }
         /// <summary>웨이브 시드 (양쪽 웨이브 구성이 같다)</summary>
         uint Seed { get; }
+        /// <summary>시작까지 남은 초 (봇 3초, 실시간은 서버 시작 시각까지 - 카운트다운 길이)</summary>
+        double StartDelay { get; }
         /// <summary>상대가 몹을 던짐 → 내 Game.ReceiveAttack</summary>
         event Action<AttackPayload> Attack;
         /// <summary>상대 전장 스냅샷 → 미니맵·VS 줄</summary>

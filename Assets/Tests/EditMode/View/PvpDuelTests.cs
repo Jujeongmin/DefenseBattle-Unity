@@ -15,6 +15,7 @@ namespace DefenseBattle.View.Tests
             public string Nick => "봇";
             public int Trophies => 0;
             public uint Seed => 1;
+            public double StartDelay { get; set; } = PvpDuel.CountdownSec;
             public event Action<AttackPayload> Attack;
             public event Action<BoardSnapshot> Snapshot;
             public event Action<PvpOutcome> Finished;
@@ -48,6 +49,20 @@ namespace DefenseBattle.View.Tests
             Assert.AreEqual(1, go);
             duel.Tick(0.1);
             Assert.AreEqual(1, opp.Ticks);
+        }
+
+        [Test]
+        public void Countdown_UsesOpponentStartDelay()
+        {
+            // 실시간 대전은 서버가 정한 시작 시각까지 남은 시간만큼 센다 (두 기기가 같은 순간에 시작)
+            Game g = NewGame();
+            var opp = new FakeOpponent { StartDelay = 1.2 };
+            var duel = new PvpDuel(g, opp);
+            Assert.AreEqual(1.2, duel.CountdownLeft, 1e-9);
+            duel.Tick(1.1);
+            Assert.IsTrue(g.Paused);
+            duel.Tick(0.2);
+            Assert.IsFalse(g.Paused);
         }
 
         [Test]

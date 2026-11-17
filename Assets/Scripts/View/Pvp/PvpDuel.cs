@@ -11,14 +11,14 @@ namespace DefenseBattle.View
     /// </summary>
     public sealed class PvpDuel
     {
-        /// <summary>시작 카운트다운 (pvp.ts startAt = now + 3000)</summary>
+        /// <summary>봇전 시작 카운트다운 (pvp.ts startAt = now + 3000). 실시간은 상대의 StartDelay (서버 시작 시각까지)</summary>
         public const double CountdownSec = 3;
         /// <summary>내가 무너진 뒤 결과를 기다리는 최대 시간 (main.ts fallback 6000)</summary>
         public const double ResultTimeout = 6;
 
         readonly Game m_player;
         readonly BoardSnapshot m_mySnap = new BoardSnapshot();
-        double m_countdown = CountdownSec;
+        double m_countdown;
         double m_snapAcc;
         double m_fallback = -1;
         bool m_started;
@@ -40,6 +40,7 @@ namespace DefenseBattle.View
         {
             m_player = player;
             Opponent = opp;
+            m_countdown = Math.Max(0, opp.StartDelay);
             player.Paused = true;
             player.AttackSent += OnMyAttack;
             player.GameEnded += OnMyEnd;
