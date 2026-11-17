@@ -35,6 +35,7 @@ namespace DefenseBattle.View
                 img.rectTransform.anchorMin = img.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
                 img.rectTransform.sizeDelta = new Vector2(Size, Size);
                 img.gameObject.SetActive(false);
+                Ui.OwnCanvas(img.gameObject); // 날아가는 동안 매 프레임 움직인다
                 m_flies[i].Img = img;
             }
         }

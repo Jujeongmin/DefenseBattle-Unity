@@ -18,6 +18,9 @@ namespace DefenseBattle.View
         string m_ticket;
         bool m_done;
 
+        /// <summary>서버 응답을 기다리는 최대 시간 (초) - 넘으면 트로피 변화 없이 결과를 낸다 (PvpDuel 의 6초 안전장치보다 짧게)</summary>
+        public float ReportTimeout = 5f;
+
         public string Nick { get; }
         public int Trophies { get; }
         public event Action<AttackPayload> Attack;
@@ -81,6 +84,16 @@ namespace DefenseBattle.View
             m_bot.Stop();
         }
 
+        static async Task ApplyLate(Task<BotResultReply> call)
+        {
+            try
+            {
+                BotResultReply r = await call;
+                if (r?.Econ != null) EconCache.Apply(r.Econ);
+            }
+            catch (Exception ex) { Debug.LogWarning("[Pvp] 늦은 봇전 결과 실패: " + ex.Message); }
+        }
+
         async Task Finish(bool playerWon)
         {
             if (m_done) return;
@@ -88,18 +101,27 @@ namespace DefenseBattle.View
             m_bot.Stop();
             var o = new PvpOutcome { Won = playerWon, Trophies = EconCache.State.Pvp.Trophies };
             // 시작 기록이 아직 오는 중이면 기다렸다가 보고한다 (느린 연결에서 일찍 나가도 패배가 기록되게 - 원본은 시작 기록 뒤에 판을 열었다)
-            if (m_begin != null) await m_begin;
+            if (m_begin != null) await Task.WhenAny(m_begin, Task.Delay(TimeSpan.FromSeconds(ReportTimeout)));
             if (m_ticket != null)
             {
                 try
                 {
-                    BotResultReply r = await m_report(m_ticket, playerWon);
-                    if (r != null)
+                    Task<BotResultReply> call = m_report(m_ticket, playerWon);
+                    if (await Task.WhenAny(call, Task.Delay(TimeSpan.FromSeconds(ReportTimeout))) == call)
                     {
-                        o.Delta = r.Delta;
-                        o.Trophies = r.Trophies;
-                        o.Reward = r.Reward;
-                        if (r.Econ != null) EconCache.Apply(r.Econ);
+                        BotResultReply r = await call;
+                        if (r != null)
+                        {
+                            o.Delta = r.Delta;
+                            o.Trophies = r.Trophies;
+                            o.Reward = r.Reward;
+                            if (r.Econ != null) EconCache.Apply(r.Econ);
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[Pvp] 봇전 결과 응답이 늦음 - 결과를 먼저 보여 준다");
+                        _ = ApplyLate(call); // 늦게라도 오면 경제 상태는 맞춘다
                     }
                 }
                 catch (Exception ex) { Debug.LogWarning("[Pvp] 봇전 결과 저장 실패: " + ex.Message); }

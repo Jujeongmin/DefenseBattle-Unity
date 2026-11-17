@@ -9,7 +9,5 @@ namespace DefenseBattle.View
         public int Delta;
         public int Trophies;
         public PvpRewardResult Reward;
-        /// <summary>내가 나가서 끝남 (결과 화면 없이 로비로)</summary>
-        public bool Left;
     }
 }

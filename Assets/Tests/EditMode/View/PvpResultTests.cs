@@ -52,6 +52,13 @@ namespace DefenseBattle.View.Tests
         }
 
         [Test]
+        public void OpponentNick_IsNotParsedAsTags()
+        {
+            ResultView v = ResultFlow.ForPvp(Win(0, null), "<color=red>x</color>", 2, false);
+            StringAssert.Contains("<noparse><color=red>x</color></noparse>", v.Sub, "실시간 상대 닉네임이 글자 태그로 먹히지 않게");
+        }
+
+        [Test]
         public void Buttons_RematchAndLobby()
         {
             ResultView v = ResultFlow.ForPvp(new PvpOutcome { Won = false }, "봇", 1, true);

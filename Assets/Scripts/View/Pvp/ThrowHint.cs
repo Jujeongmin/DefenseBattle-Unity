@@ -40,6 +40,7 @@ namespace DefenseBattle.View
             m_hand.anchorMin = m_hand.anchorMax = new Vector2(0.5f, 0.5f);
             m_hand.sizeDelta = new Vector2(80, 80);
             m_root.gameObject.SetActive(false);
+            Ui.OwnCanvas(m_root.gameObject); // 손이 매 프레임 움직인다
         }
 
         public void Show()
@@ -61,7 +62,7 @@ namespace DefenseBattle.View
             bool show = Active && card != null && !paused;
             if (m_root.gameObject.activeSelf != show) m_root.gameObject.SetActive(show);
             if (!show) return;
-            m_root.SetAsLastSibling();
+            if (m_root.GetSiblingIndex() != m_parent.childCount - 1) m_root.SetAsLastSibling();
             m_t = (m_t + dt / Loop) % 1f;
             Vector2 a = Center(card), b = Center(target);
             float k = Mathf.Clamp01(m_t * 1.25f); // 끝에서 잠깐 멈춤

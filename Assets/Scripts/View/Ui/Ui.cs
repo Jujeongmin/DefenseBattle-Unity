@@ -239,6 +239,16 @@ namespace DefenseBattle.View
             Fill(Line(tag.transform, "NEW", 18, Cream).rectTransform);
         }
 
+        /// <summary>
+        /// 매 프레임 움직이는 UI 를 자기 Canvas 로 떼어 낸다 (정적인 HUD 캔버스가 매 프레임 다시 묶이지 않게).
+        /// raycast = 누를 수 있는 것이면 GraphicRaycaster 도 붙인다 (하위 캔버스는 자기 레이캐스터가 있어야 눌린다)
+        /// </summary>
+        public static void OwnCanvas(GameObject go, bool raycast = false)
+        {
+            if (go.GetComponent<Canvas>() == null) go.AddComponent<Canvas>();
+            if (raycast && go.GetComponent<GraphicRaycaster>() == null) go.AddComponent<GraphicRaycaster>();
+        }
+
         /// <summary>한 줄 글 입력칸 (닉네임 등)</summary>
         public static TMP_InputField Input(Transform parent, string value, int maxLength, float fontSize = 28)
         {

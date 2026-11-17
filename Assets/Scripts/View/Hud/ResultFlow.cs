@@ -74,7 +74,7 @@ namespace DefenseBattle.View
             {
                 Win = o.Won,
                 Title = o.Won ? Loc.Tl("{0} 승리!", Loc.Icon("trophy")) : Loc.Tl("패배"),
-                Sub = oppNick + " · Wave " + wave,
+                Sub = "<noparse>" + oppNick + "</noparse> · Wave " + wave, // 상대가 정한 닉네임의 태그를 막는다
             };
             v.Rewards.Add(Loc.Icon("trophy") + " " + (o.Delta >= 0 ? "+" : "") + o.Delta);
             PvpRewardResult r = o.Reward;

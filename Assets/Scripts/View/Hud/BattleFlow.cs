@@ -142,7 +142,6 @@ namespace DefenseBattle.View
                 m_duel = new PvpDuel(m_runner.Game, l.Opponent);
                 m_duel.Result += OnPvpResult;
                 m_hud.ShowPvp(m_duel);
-                DuelStarted?.Invoke(m_duel);
             }
             StopTutorial(); // 지난 판의 안내가 남아 있으면
             if (l.Kind == BattleLaunch.Mode.Stage && l.StageId == "1-1" && LocalMeta.Data.Tutorial == 0) m_tutorialCo = StartCoroutine(Tutorial(m_runner.Game));
@@ -285,11 +284,6 @@ namespace DefenseBattle.View
         PvpDuel m_duel;
         readonly List<Reveal> m_pendingReveals = new List<Reveal>();
 
-        /// <summary>대전 판이 열림 (PvP HUD·상대 미니맵이 붙는다)</summary>
-        public event Action<PvpDuel> DuelStarted;
-        /// <summary>대전 판이 내려감</summary>
-        public event Action DuelEnded;
-
         void Update()
         {
             if (m_duel != null) m_duel.Tick(Time.deltaTime);
@@ -317,7 +311,6 @@ namespace DefenseBattle.View
             m_duel.Leave(reportDefeat);
             m_duel = null;
             m_hud.HidePvp();
-            DuelEnded?.Invoke();
         }
 
         void ToLobby()

@@ -100,6 +100,22 @@ namespace DefenseBattle.View.Tests
         }
 
         [UnityTest]
+        public IEnumerator BotOpponent_ResultHangs_FinishesAfterTimeoutWithoutTrophies()
+        {
+            var bot = PvpRules.MakeBot(EconState.Fresh("S2026-11"), 6u, new SystemRandom());
+            var never = new TaskCompletionSource<BotResultReply>();
+            var opp = new BotOpponent(bot, "봇", 0, () => Task.FromResult("t1"), (id, won) => never.Task) { ReportTimeout = 0.2f };
+            PvpOutcome got = null;
+            opp.Finished += o => got = o;
+            _ = opp.Begin();
+            opp.ReportDefeat();
+            float until = UnityEngine.Time.realtimeSinceStartup + 3f;
+            while (got == null && UnityEngine.Time.realtimeSinceStartup < until) yield return null;
+            Assert.IsNotNull(got, "서버 결과가 멈춰도 결과 화면은 뜬다");
+            Assert.AreEqual(0, got.Delta);
+        }
+
+        [UnityTest]
         public IEnumerator BotOpponent_DefeatBeforeStartRecord_WaitsForTicket()
         {
             var ticket = new TaskCompletionSource<string>();

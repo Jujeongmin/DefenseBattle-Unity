@@ -43,6 +43,7 @@ namespace DefenseBattle.View
             p.m_image = go.GetComponent<RawImage>();
             p.m_image.texture = tex;
             p.m_image.raycastTarget = true;
+            Ui.OwnCanvas(go, true); // 매 프레임 위치를 바꾸므로 자기 캔버스
             var outline = go.AddComponent<Outline>();
             outline.effectColor = new Color32(0x2a, 0x1d, 0x16, 255);
             outline.effectDistance = new Vector2(3, -3);
@@ -61,6 +62,14 @@ namespace DefenseBattle.View
         {
             m_pressed = false;
             m_hold = -1;
+        }
+
+        /// <summary>누른 채로 꺼지면(판을 나감) 손을 뗀 것으로 - 다음 판에 펼쳐진 채로 시작하지 않게</summary>
+        void OnDisable()
+        {
+            Release();
+            Aiming = false;
+            m_t = 0;
         }
 
         void LateUpdate()

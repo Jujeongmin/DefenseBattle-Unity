@@ -93,6 +93,40 @@ namespace DefenseBattle.Core.Tests
         }
 
         [Test]
+        public void Sample_SmallDriftCatchesUpSmoothly()
+        {
+            // 스냅이 조금 늦게 와도 그릴 시점은 튀지 않고 실제 시간만큼 흐르며 조금씩 따라잡는다
+            var tl = new SnapshotTimeline();
+            tl.Push(Snap(0, (1, 0)), 0);
+            tl.Push(Snap(10, (1, Map)), 5);
+            var f = new OppFrame();
+            tl.Sample(5, f);
+            float x0 = f.MobX[IndexOf(f, 1)];
+            tl.Push(Snap(10.5, (1, Map)), 5.4); // 0.05 실제 초 늦게 도착
+            tl.Sample(5.1, f);
+            float x1 = f.MobX[IndexOf(f, 1)];
+            float perGameSec = Map / 10f;
+            Assert.Less(x1 - x0, perGameSec * (0.1f * (float)Waves.PlaySpeed) * 1.6f, "한 프레임에 크게 튀지 않음");
+            Assert.Greater(x1, x0, "앞으로 흐른다");
+        }
+
+        [Test]
+        public void Push_BurstInOneFrame_KeepsOrderAndInterpolates()
+        {
+            // 끊겼던 스냅 여러 개가 한 프레임에 몰려 와도 시간 순서대로 보간
+            var tl = new SnapshotTimeline();
+            tl.Push(Snap(1, (1, 0)), 0);
+            tl.Push(Snap(2, (1, Map * 0.5)), 3);
+            tl.Push(Snap(3, (1, Map)), 3);
+            Assert.AreEqual(3, tl.Count);
+            var f = new OppFrame();
+            Assert.IsTrue(tl.Sample(3, f));
+            // 그릴 시점 = 3 - Delay → 2 와 3 사이
+            float expected = (float)(0.5 + (1 - SnapshotTimeline.Delay) * 0.5) * Map;
+            Assert.AreEqual(expected, f.MobX[IndexOf(f, 1)], 4f);
+        }
+
+        [Test]
         public void Sample_EmptyReturnsFalse()
         {
             Assert.IsFalse(new SnapshotTimeline().Sample(0, new OppFrame()));

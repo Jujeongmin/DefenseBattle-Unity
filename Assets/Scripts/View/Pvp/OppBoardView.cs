@@ -71,6 +71,10 @@ namespace DefenseBattle.View
             m_cam.backgroundColor = new Color32(0x6c, 0x9a, 0x3a, 255);
             m_cam.targetTexture = Texture;
 
+            // 대전 중 새 오브젝트를 만들지 않게 스냅샷 최대 개수만큼 미리 (OppFrame.MaxMobs / MaxUnits)
+            for (int i = 0; i < OppFrame.MaxMobs; i++) Get(m_mobs, i, MobOrder).enabled = false;
+            for (int i = 0; i < OppFrame.MaxUnits; i++) Get(m_units, i, UnitOrder).enabled = false;
+
             if (s_gapPoints == null)
             {
                 s_gapPoints = new Vector2[BoardSnapshot.GapSamples];

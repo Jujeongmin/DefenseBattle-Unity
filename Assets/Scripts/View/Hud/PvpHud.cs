@@ -24,7 +24,7 @@ namespace DefenseBattle.View
         readonly RectTransform m_safe, m_top, m_board, m_progress, m_controls;
         readonly SpriteCatalog m_cat;
         readonly char[] m_buf = new char[64];
-        float m_boardBottom, m_progressBottom, m_progressTop, m_controlsTop;
+        float m_boardBottom, m_boardTop, m_progressBottom, m_progressTop, m_controlsTop;
 
         RectTransform m_vs, m_cards, m_countRoot;
         RectTransform m_meFill, m_oppFill;
@@ -52,6 +52,10 @@ namespace DefenseBattle.View
         public bool CountingDown => m_duel != null && m_duel.CountingDown;
         /// <summary>첫 대전: 한 번 던질 때까지 소환 잠금 (ui.ts summonLock)</summary>
         public bool SummonLocked { get; set; }
+        /// <summary>첫 대전 던지기 안내가 떠 있음 (판 안 팁을 겹쳐 띄우지 않는다 - ui.ts maybeTip: hintTimer)</summary>
+        public bool HintActive => m_hint != null && m_hint.Active;
+        /// <summary>카운트다운 끝 GO! 소리 (ui.ts countdown: audio.sendAttack) - BattleHud 가 넣는다</summary>
+        public Action GoSound;
         /// <summary>몹 카드 i 번 (Game.AttackCards 순서)</summary>
         public RectTransform CardRect(int i) => (RectTransform)m_cardButtons[i].transform;
         public int CardCount => m_cardButtons.Length;
@@ -91,6 +95,7 @@ namespace DefenseBattle.View
             m_progressBottom = m_progress.offsetMin.y;
             m_progressTop = m_progress.offsetMax.y;
             m_controlsTop = m_controls.offsetMax.y;
+            m_boardTop = m_board.offsetMax.y;
         }
 
         void Build()
@@ -266,6 +271,8 @@ namespace DefenseBattle.View
             m_cards.gameObject.SetActive(true);
             m_countRoot.gameObject.SetActive(true);
             m_countSub.gameObject.SetActive(true);
+            m_count.Set(m_buf, CharText.PutInt(m_buf, 0, (int)PvpDuel.CountdownSec)); // 지난 판의 GO! 가 한 프레임 보이지 않게
+            m_lastCount = (int)PvpDuel.CountdownSec;
             m_goTimer = 0;
             Layout(true);
         }
@@ -293,12 +300,11 @@ namespace DefenseBattle.View
         /// <summary>대전이면 VS 줄·카드 줄만큼 전장을 줄이고, 아니면 원래 배치</summary>
         void Layout(bool pvp)
         {
-            float topH = -m_top.offsetMin.y;
             float shift = pvp ? CardsHeight : 0;
             m_progress.offsetMin = new Vector2(m_progress.offsetMin.x, m_progressBottom + shift);
             m_progress.offsetMax = new Vector2(m_progress.offsetMax.x, m_progressTop + shift);
             m_board.offsetMin = new Vector2(m_board.offsetMin.x, m_boardBottom + shift);
-            m_board.offsetMax = new Vector2(m_board.offsetMax.x, -topH - (pvp ? VsHeight : 0));
+            m_board.offsetMax = new Vector2(m_board.offsetMax.x, m_boardTop - (pvp ? VsHeight : 0)); // 대전이 아니면 처음 값 그대로
         }
 
         void OnThrown()
@@ -313,6 +319,7 @@ namespace DefenseBattle.View
         void OnGo()
         {
             m_count.Set("GO!");
+            GoSound?.Invoke();
             m_countSub.gameObject.SetActive(false);
             m_goTimer = 0.5f;
         }

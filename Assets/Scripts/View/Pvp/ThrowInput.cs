@@ -41,6 +41,7 @@ namespace DefenseBattle.View
             g.anchorMin = g.anchorMax = new Vector2(0.5f, 0.5f);
             g.sizeDelta = new Vector2(GhostSize, GhostSize);
             m_ghost.gameObject.SetActive(false);
+            Ui.OwnCanvas(m_ghost.gameObject); // 손가락을 따라 매 프레임 움직인다
             m_fly = new ThrowFly(parent);
             m_fly.Landed += () => { if (m_hud.Peek != null) m_hud.Peek.Hit(); };
             hud.CardDown += OnDown;
@@ -67,7 +68,8 @@ namespace DefenseBattle.View
 
         void OnDown(int slot, PointerEventData e)
         {
-            if (m_game == null || m_game.Over || m_hud.CountingDown || !m_hud.CardEnabled(slot)) { FlashGold?.Invoke(); return; }
+            if (m_game == null || m_game.Over || m_hud.CountingDown) return;
+            if (!m_hud.CardEnabled(slot)) { FlashGold?.Invoke(); return; } // 골드·쿨타임이 모자람
             m_slot = slot;
             m_downAt = e.position;
             AttackDef a = Attacks.Get(m_hud.CardId(slot));
