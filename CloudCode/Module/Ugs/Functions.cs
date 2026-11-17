@@ -135,6 +135,9 @@ namespace DefenseBattle.Server.Ugs
         [CloudCodeFunction(CloudApi.SetNick)]
         public Task<string> SetNick(IExecutionContext context, string nick) => Server(context).SetNick(Me(context), nick);
 
+        [CloudCodeFunction(CloudApi.GetNick)]
+        public Task<string> GetNick(IExecutionContext context) => Server(context).GetNick(Me(context));
+
         [CloudCodeFunction(CloudApi.Leaderboard)]
         public Task<LeaderboardReply> Leaderboard(IExecutionContext context) => Server(context).Leaderboard(Me(context));
     }

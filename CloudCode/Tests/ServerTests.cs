@@ -355,6 +355,16 @@ namespace DefenseBattle.Server.Tests
         }
 
         [Test]
+        public async Task GetNick_ReturnsSavedNickOrEmpty()
+        {
+            // 새 기기에서 같은 계정으로 들어오면 서버에 저장된 이름을 되찾는다
+            var rig = new Rig();
+            Assert.AreEqual("", await rig.Server.GetNick("p1"));
+            await rig.Server.SetNick("p1", "가나다");
+            Assert.AreEqual("가나다", await rig.Server.GetNick("p1"));
+        }
+
+        [Test]
         public async Task Nick_BadBecomesDefault_RankUpdatesImmediately()
         {
             var rig = new Rig();

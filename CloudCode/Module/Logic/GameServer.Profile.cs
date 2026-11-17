@@ -20,6 +20,13 @@ namespace DefenseBattle.Server
             return clean;
         }
 
+        /// <summary>저장된 닉네임 (없으면 "") - 새 기기에서 같은 계정으로 들어왔을 때 이름을 되찾는다</summary>
+        public async Task<string> GetNick(string playerId)
+        {
+            ProfileRecord p = await m_store.ReadPlayer<ProfileRecord>(playerId, Keys.Profile);
+            return p?.Nick ?? "";
+        }
+
         public async Task<LeaderboardReply> Leaderboard(string playerId)
         {
             EconState e = await LoadEcon(playerId);

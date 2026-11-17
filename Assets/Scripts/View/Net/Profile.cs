@@ -44,12 +44,34 @@ namespace DefenseBattle.View
             return clean;
         }
 
-        /// <summary>접속 뒤 한 번: 처음 만든 이름을 아직 서버에 안 알렸으면 알린다</summary>
+        /// <summary>
+        /// 접속 뒤 한 번: 이 기기가 아직 서버와 맞추지 않았으면, 서버에 저장된 이름이 있으면 그걸 쓰고(새 기기·계정 전환)
+        /// 없을 때만 이 기기에서 만든 이름을 알린다
+        /// </summary>
         public static async void EnsureSynced()
         {
             if (PlayerPrefs.GetInt(SyncedKey, 0) == 1) return;
-            try { await Save(Nick); }
+            try
+            {
+                string saved = await CloudClient.Call<string>(CloudApi.GetNick);
+                if (!string.IsNullOrEmpty(saved))
+                {
+                    Nick = saved;
+                    PlayerPrefs.SetInt(SyncedKey, 1);
+                    PlayerPrefs.Save();
+                    return;
+                }
+                await Save(Nick);
+            }
             catch (Exception ex) { Debug.LogWarning("[Profile] 닉네임 동기화 실패 (다음 접속 때 다시): " + ex.Message); }
+        }
+
+        /// <summary>다른 계정으로 바뀜 → 다음 동기화 때 그 계정의 이름을 받아 온다</summary>
+        public static void ResetForAccountChange()
+        {
+            PlayerPrefs.DeleteKey(SyncedKey);
+            PlayerPrefs.DeleteKey(Key);
+            PlayerPrefs.Save();
         }
     }
 }

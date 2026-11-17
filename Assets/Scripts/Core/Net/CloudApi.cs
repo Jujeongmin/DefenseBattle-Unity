@@ -47,6 +47,7 @@ namespace DefenseBattle.Core
 
         // ---- 닉네임·랭킹 ----
         public const string SetNick = "SetNick";                   // (nick) → string (실제로 저장된 이름)
+        public const string GetNick = "GetNick";                   // () → string (저장된 이름, 없으면 "")
         public const string Leaderboard = "Leaderboard";           // () → LeaderboardReply
 
         // ---- 서버가 보내는 알림 (Cloud Code 푸시 메시지 type) ----
