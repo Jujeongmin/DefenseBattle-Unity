@@ -183,7 +183,9 @@ namespace DefenseBattle.Server
                 MatchPlayer me = r.Find(playerId);
                 if (me != null) me.LastSeen = now;
             });
-            return rec == null || rec.Find(playerId) == null ? null : StateOf(rec, now);
+            if (rec == null || rec.Find(playerId) == null) return null;
+            if (Incomplete(rec)) rec.Result = await PayOut(rec); // 지급 도중 실패한 경기는 마저 지급
+            return StateOf(rec, now);
         }
 
         /// <summary>내 전장이 무너짐 → 상대 승리</summary>
@@ -256,9 +258,25 @@ namespace DefenseBattle.Server
                 mine = true;
             });
             if (rec == null) return null;
-            if (!mine) return rec.Result;
+            if (!mine) return Incomplete(rec) ? await PayOut(rec) : rec.Result;
+            return await PayOut(rec);
+        }
 
+        /// <summary>'done' 인데 결과에 트로피가 다 없음 = 지급 도중 실패한 경기</summary>
+        static bool Incomplete(MatchRecord rec)
+            => rec.Status == MatchState.Done && rec.Result != null && rec.Players.Exists(p => rec.Result.Trophies == null || !rec.Result.Trophies.ContainsKey(p.PlayerId));
+
+        /// <summary>
+        /// 양쪽 트로피·보상 지급 후 결과를 경기 기록에 쓰고 알린다. 지급은 경기 id 로 한 번만이라
+        /// 지급 도중 실패한 경기를 다음 호출이 다시 불러도 안전하다 (이미 받은 쪽은 트로피만 다시 읽는다).
+        /// </summary>
+        async Task<PvpMatchResult> PayOut(MatchRecord rec)
+        {
+            string matchId = rec.MatchId;
             PvpMatchResult result = rec.Result;
+            if (result.Trophies == null) result.Trophies = new Dictionary<string, int>();
+            if (result.Delta == null) result.Delta = new Dictionary<string, int>();
+            if (result.Rewards == null) result.Rewards = new Dictionary<string, PvpRewardResult>();
             foreach (MatchPlayer p in rec.Players)
             {
                 bool won = p.PlayerId == result.Winner;

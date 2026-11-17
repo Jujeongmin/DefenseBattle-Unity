@@ -344,6 +344,30 @@ namespace DefenseBattle.Server.Tests
         }
 
         [Test]
+        public async Task HalfPaidResult_IsCompletedByNextCall()
+        {
+            // FinishMatch 가 경기를 'done' 으로 바꾼 뒤 지급 도중 실패함 (결과에 트로피 없음) → 다음 Ping 이 지급을 마저 한다
+            var (rig, host, guest) = await Matched();
+            await Start(rig, host, guest);
+            await rig.Store.MutateShared<MatchRecord, bool>(Keys.Match(host.MatchId), () => new MatchRecord(), r =>
+            {
+                r.Status = MatchState.Done;
+                r.Result = new PvpMatchResult { MatchId = host.MatchId, Winner = "p2", Loser = "p1", Reason = "defeat" };
+                return true;
+            });
+            MatchState s = await rig.Server.PvpPing("p2", host.MatchId);
+            Assert.AreEqual(MatchState.Done, s.Status);
+            Assert.IsTrue(s.Result.Trophies.ContainsKey("p1"));
+            Assert.IsTrue(s.Result.Trophies.ContainsKey("p2"));
+            Assert.AreEqual(PvpConfig.TrophyWin, s.Result.Delta["p2"]);
+            Assert.AreEqual(PvpConfig.TrophyWin, (await rig.Server.EconSync("p2")).Econ.Pvp.Trophies);
+            // 다시 불러도 두 번 주지 않는다
+            MatchState again = await rig.Server.PvpPing("p2", host.MatchId);
+            Assert.AreEqual(PvpConfig.TrophyWin, again.Result.Trophies["p2"]);
+            Assert.AreEqual(PvpConfig.TrophyWin, (await rig.Server.EconSync("p2")).Econ.Pvp.Trophies);
+        }
+
+        [Test]
         public async Task Leave_DuringPlayLoses_BeforeStartCancels()
         {
             var (rig, host, guest) = await Matched();
