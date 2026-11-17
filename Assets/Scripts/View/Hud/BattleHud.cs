@@ -186,7 +186,10 @@ namespace DefenseBattle.View
             if (banner) m_mythicCached.Set(g.MythicBanner.Text);
 
             int cost = g.SummonCost;
-            bool canSummon = g.Gold >= cost && !g.Over;
+            // 대전 카운트다운 중·첫 대전 던지기 안내 중에는 소환을 막는다 (ui.ts countingDown · summonLock)
+            bool counting = m_pvpHud != null && m_pvpHud.CountingDown;
+            bool canSummon = g.Gold >= cost && !g.Over && !counting && !(m_pvpHud != null && m_pvpHud.SummonLocked);
+            if (m_heroButton.interactable == counting) m_heroButton.interactable = !counting;
             if (m_summonButton.interactable != canSummon)
             {
                 m_summonButton.interactable = canSummon;
@@ -203,7 +206,21 @@ namespace DefenseBattle.View
                 m_stacks.MarkDirty();
             }
             m_stacks.Refresh(g, mask);
+            if (m_pvpHud != null) m_pvpHud.Tick(g, Time.unscaledDeltaTime);
             MaybeTip(g);
+        }
+
+        // ---------- 대전 HUD ----------
+        PvpHud m_pvpHud;
+
+        /// <summary>대전 HUD (처음 대전할 때 만든다)</summary>
+        public PvpHud Pvp => m_pvpHud ?? (m_pvpHud = new PvpHud(m_runner.BoardArea, m_runner.Catalog));
+
+        public void ShowPvp(PvpDuel duel) => Pvp.Show(duel, Profile.Nick);
+
+        public void HidePvp()
+        {
+            if (m_pvpHud != null) m_pvpHud.Hide();
         }
 
         /// <summary>소환 로그 (최근 6줄) - 줄이 바뀐 때만</summary>

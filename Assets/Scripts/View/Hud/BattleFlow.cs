@@ -141,6 +141,7 @@ namespace DefenseBattle.View
             {
                 m_duel = new PvpDuel(m_runner.Game, l.Opponent);
                 m_duel.Result += OnPvpResult;
+                m_hud.ShowPvp(m_duel);
                 DuelStarted?.Invoke(m_duel);
             }
             StopTutorial(); // 지난 판의 안내가 남아 있으면
@@ -315,6 +316,7 @@ namespace DefenseBattle.View
             m_duel.Result -= OnPvpResult;
             m_duel.Leave(reportDefeat);
             m_duel = null;
+            m_hud.HidePvp();
             DuelEnded?.Invoke();
         }
 
