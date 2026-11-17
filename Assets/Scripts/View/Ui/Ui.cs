@@ -239,6 +239,55 @@ namespace DefenseBattle.View
             Fill(Line(tag.transform, "NEW", 18, Cream).rectTransform);
         }
 
+        /// <summary>한 줄 글 입력칸 (닉네임 등)</summary>
+        public static TMP_InputField Input(Transform parent, string value, int maxLength, float fontSize = 28)
+        {
+            Image bg = Image(parent, null, new Color32(0xff, 0xfb, 0xf0, 255), "Input");
+            bg.raycastTarget = true;
+            RectTransform area = Rect(bg.transform, "Area");
+            Fill(area, 14, 6, 14, 6);
+            area.gameObject.AddComponent<RectMask2D>();
+            TextMeshProUGUI text = Text(area, "", fontSize, Ink, TextAlignmentOptions.Left, true);
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+            Fill(text.rectTransform);
+            var field = bg.gameObject.AddComponent<TMP_InputField>();
+            field.textViewport = area;
+            field.textComponent = text;
+            field.characterLimit = maxLength;
+            field.lineType = TMP_InputField.LineType.SingleLine;
+            field.text = value ?? "";
+            return field;
+        }
+
+        /// <summary>가로 막대 슬라이더 0~1 (음량)</summary>
+        public static Slider Slider(Transform parent, float value, Action<float> changed)
+        {
+            RectTransform root = Rect(parent, "Slider");
+            Image track = Image(root, null, new Color32(0, 0, 0, 110), "Track");
+            Fill(track.rectTransform, 0, 14, 0, 14);
+            RectTransform fillArea = Rect(root, "FillArea");
+            Fill(fillArea, 0, 14, 0, 14);
+            Image fill = Image(fillArea, null, Gold, "Fill");
+            fill.rectTransform.anchorMin = Vector2.zero;
+            fill.rectTransform.anchorMax = new Vector2(0, 1);
+            fill.rectTransform.sizeDelta = Vector2.zero;
+            RectTransform handleArea = Rect(root, "HandleArea");
+            Fill(handleArea, 16, 0, 16, 0);
+            Image handle = Image(handleArea, null, Cream, "Handle");
+            handle.raycastTarget = true;
+            handle.rectTransform.sizeDelta = new Vector2(32, 0);
+            var s = root.gameObject.AddComponent<Slider>();
+            s.fillRect = fill.rectTransform;
+            s.handleRect = handle.rectTransform;
+            s.targetGraphic = handle;
+            s.direction = UnityEngine.UI.Slider.Direction.LeftToRight;
+            s.minValue = 0;
+            s.maxValue = 1;
+            s.value = value;
+            if (changed != null) s.onValueChanged.AddListener(v => changed(v));
+            return s;
+        }
+
         /// <summary>천 단위 쉼표 (toLocaleString)</summary>
         public static string Num(long v) => v.ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
 

@@ -135,6 +135,22 @@ namespace DefenseBattle.View
             if (!m_muted && SoundSettings.BgmVolume > 0 && m_bgm.clip != null) m_bgm.Play();
         }
 
+        /// <summary>설정 음량 바꾸기 (audio.ts setBgmVolume): 0 이면 멈추고, 0 에서 올리면 다시 튼다 (저장)</summary>
+        public void SetBgmVolume(float v)
+        {
+            SoundSettings.BgmVolume = v;
+            if (m_bgm == null) return;
+            m_bgm.volume = SoundRules.BgmVolume * SoundSettings.BgmVolume;
+            if (SoundSettings.BgmVolume <= 0) m_bgm.Pause();
+            else if (!m_muted && m_hasTrack && m_bgm.clip != null && !m_bgm.isPlaying)
+            {
+                if (m_bgm.time > 0) m_bgm.UnPause();
+                else m_bgm.Play();
+            }
+        }
+
+        public void SetSfxVolume(float v) => SoundSettings.SfxVolume = v;
+
         public void StopBgm()
         {
             if (m_bgm == null) return;

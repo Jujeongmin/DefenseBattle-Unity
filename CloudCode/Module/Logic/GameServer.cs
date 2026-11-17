@@ -49,6 +49,7 @@ namespace DefenseBattle.Server
             return m_store.MutatePlayer<EconRecord, EconReply<T>>(playerId, Keys.Econ, NewEconRecord, rec =>
             {
                 if (rec.Data == null) rec.Data = EconState.Fresh(Ctx().SeasonId);
+                EconRules.RollSeason(rec.Data, Ctx()); // 새 달이면 시즌 패스 교체 + 500 넘는 트로피 절반
                 T result = fn(rec.Data);
                 return new EconReply<T> { Econ = Json.Clone(rec.Data), Result = result };
             });

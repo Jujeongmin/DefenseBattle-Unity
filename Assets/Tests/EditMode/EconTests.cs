@@ -114,6 +114,30 @@ namespace DefenseBattle.Core.Tests
         }
 
         [Test]
+        public void RollSeason_HalvesTrophiesAbove500Once()
+        {
+            // server.ts getStats: 시즌이 바뀐 뒤 처음 읽을 때 한 번, SEASON_RESET_FROM(S2026-11) 시즌부터
+            EconState e = Fresh();
+            e.Season = SeasonState.Fresh("S2026-10");
+            e.Season.Xp = 300;
+            e.Pvp.Trophies = 600;
+            var nov = new EconContext(new System.DateTimeOffset(2026, 11, 2, 0, 0, 0, System.TimeSpan.Zero).ToUnixTimeMilliseconds(), new SystemRandom());
+            Assert.IsTrue(EconRules.RollSeason(e, nov));
+            Assert.AreEqual(550, e.Pvp.Trophies);
+            Assert.AreEqual("S2026-11", e.Season.Id);
+            Assert.AreEqual(0, e.Season.Xp, "새 시즌 패스");
+            Assert.IsFalse(EconRules.RollSeason(e, nov), "한 번만");
+            Assert.AreEqual(550, e.Pvp.Trophies);
+
+            EconState old = Fresh();
+            old.Season = SeasonState.Fresh("S2026-09");
+            old.Pvp.Trophies = 900;
+            var oct = new EconContext(new System.DateTimeOffset(2026, 10, 5, 0, 0, 0, System.TimeSpan.Zero).ToUnixTimeMilliseconds(), new SystemRandom());
+            EconRules.RollSeason(old, oct);
+            Assert.AreEqual(900, old.Pvp.Trophies, "초기화 시작 시즌 전에는 깎지 않는다");
+        }
+
+        [Test]
         public void Gacha_TicketsFirstThenGems()
         {
             // econ/rules.ts gachaCost: 가진 뽑기권을 먼저 쓰고 모자란 만큼 보석 (10회는 1회당 90)

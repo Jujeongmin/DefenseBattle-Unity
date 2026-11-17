@@ -40,7 +40,7 @@ namespace DefenseBattle.View
             Localization.Init(m_runner.Catalog);
             Ui.Sounds = () => m_audio.Play(Sfx.Button);
             m_audio.SwitchBgm(Bgm.Menu);
-            _ = m_boot.Run(ShowLobby);
+            _ = m_boot.Run(() => { Profile.EnsureSynced(); ShowLobby(); });
         }
 
         void ShowLobby()

@@ -16,5 +16,13 @@ namespace DefenseBattle.Core
         public const int RewardLoss = 10;
         public const int SeasonXpWin = 100;
         public const int SeasonXpLoss = 40;
+
+        /// <summary>매달 시즌이 바뀌면 이 위 트로피를 절반으로 (config.ts SEASON_RESET_ABOVE)</summary>
+        public const int SeasonResetAbove = 500;
+        /// <summary>초기화를 시작한 시즌 (config.ts SEASON_RESET_FROM) - 시즌 id 는 문자열 순서로 비교</summary>
+        public const string SeasonResetFrom = "S2026-11";
+
+        public static int SeasonResetTrophies(int trophies)
+            => trophies > SeasonResetAbove ? SeasonResetAbove + (trophies - SeasonResetAbove) / 2 : trophies;
     }
 }

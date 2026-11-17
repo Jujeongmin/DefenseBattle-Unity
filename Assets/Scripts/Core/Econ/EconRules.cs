@@ -249,6 +249,19 @@ namespace DefenseBattle.Core
             e.LastReward = amount > 0 ? new LastReward { Amount = amount, At = ctx.Now, Used = false } : null;
         }
 
+        /// <summary>
+        /// 시즌이 바뀐 뒤 처음 읽을 때 한 번 (server.ts getStats): 새 시즌 패스로 바꾸고, SeasonResetFrom 시즌부터는
+        /// 500 넘는 트로피를 절반 깎는다. 바뀌었으면 true
+        /// </summary>
+        public static bool RollSeason(EconState e, EconContext ctx)
+        {
+            string cur = ctx.SeasonId;
+            if (e.Season.Id == cur) return false;
+            if (string.CompareOrdinal(cur, PvpConfig.SeasonResetFrom) >= 0) e.Pvp.Trophies = PvpConfig.SeasonResetTrophies(e.Pvp.Trophies);
+            e.Season = SeasonState.Fresh(cur);
+            return true;
+        }
+
         public static void AddSeasonXp(EconState e, int xp, EconContext ctx)
         {
             string id = ctx.SeasonId;

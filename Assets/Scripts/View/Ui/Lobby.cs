@@ -34,6 +34,12 @@ namespace DefenseBattle.View
         RevealPopup m_reveal;
         ResearchPage m_research;
         ShopPage m_shop;
+        QuestsPage m_quests;
+        RoadPage m_road;
+        PassPage m_pass;
+        RankPage m_rank;
+        ProfilePage m_profile;
+        SettingsPage m_settings;
         bool m_busy;
         bool m_roadBusy;
         bool m_dirty;
@@ -54,6 +60,14 @@ namespace DefenseBattle.View
             m_reveal = new RevealPopup(this, m_popups, m_catalog, m_audio);
             m_research = new ResearchPage(m_panel, m_toast, m_audio, () => m_dirty = true);
             m_shop = new ShopPage(m_panel, m_modal, m_toast, m_audio, m_reveal, () => m_dirty = true);
+            m_quests = new QuestsPage(m_panel, m_toast, m_audio, () => m_dirty = true);
+            m_road = new RoadPage(m_catalog, m_panel, () => m_dirty = true);
+            m_pass = new PassPage(m_panel, m_toast, m_audio, () => m_dirty = true);
+            m_rank = new RankPage(m_panel, () => m_dirty = true);
+            m_profile = new ProfilePage(m_panel, m_toast, () => m_dirty = true);
+            m_settings = new SettingsPage(m_panel, m_audio, () => m_dirty = true);
+            m_settings.OpenProfile = m_profile.Open;
+            m_settings.ReplayTutorial = ReplayTutorial;
             m_campaign.OpenDeck = m_deck.Open; // 스테이지 정보 → 덱 편집 → 다시 스테이지 정보
             EconCache.Changed += OnEcon;
             Localization.Changed += OnEcon;
@@ -71,6 +85,19 @@ namespace DefenseBattle.View
         {
             m_root.SetActive(true);
             Render();
+            if (Progress.FeatureUnlocked(EconCache.State, "pvp")) m_rank.Prefetch(); // 랭킹 창을 처음 열 때도 바로 보이게
+        }
+
+        /// <summary>설정 → 튜토리얼 다시 하기: 안내만 처음부터 (스테이지·보상 진행은 그대로), 1-1 정보 창을 연다</summary>
+        void ReplayTutorial()
+        {
+            LocalMetaData m = LocalMeta.Data;
+            m.Tutorial = 0;
+            m.SeenFeatures.Clear();
+            LocalMeta.Save();
+            m_panel.Close();
+            m_campaign.OpenStageInfo("1-1");
+            m_dirty = true;
         }
 
         public void Hide()
@@ -129,7 +156,7 @@ namespace DefenseBattle.View
             PvpTier tier = Arenas.Of(e.Pvp.Trophies);
             Color32 tierColor = Ui.Hex(tier.Color);
 
-            Button profile = Ui.Button(bar, "paper_dark", null, 0, () => m_toast.Show(Loc.Tl("준비 중")), 1.6f);
+            Button profile = Ui.Button(bar, "paper_dark", null, 0, () => m_profile.Open(), 1.6f);
             Ui.Size(profile.gameObject, -1, 84, 1);
             Ui.Row(profile.transform, 10, 14, 16, 8, 8, TextAnchor.MiddleLeft);
             Ui.Icon(profile.transform, "trophy", 52, tierColor);
@@ -147,7 +174,7 @@ namespace DefenseBattle.View
             Ui.Size(n.gameObject, -1, -1, 1);
             Ui.Icon(gems.transform, "plus", 28, Ui.Green);
 
-            Button gear = Ui.Button(bar, "btn_blue", null, 0, () => m_toast.Show(Loc.Tl("준비 중")));
+            Button gear = Ui.Button(bar, "btn_blue", null, 0, () => m_settings.Open());
             Ui.Size(gear.gameObject, 84, 84);
             Ui.Fill(Ui.Icon(gear.transform, "settings", 44).rectTransform, 18, 22, 18, 14);
         }
@@ -168,6 +195,7 @@ namespace DefenseBattle.View
                 Ui.Size(u.gameObject, 88, 88);
             }
 
+            if (MetaRules.MonthlyClaimable(e, NowMs, LocalMeta.Today)) MonthlyNotice(body);
             if (Progress.FeatureUnlocked(e, "pvp"))
             {
                 ArenaCard(body, e);
@@ -212,7 +240,8 @@ namespace DefenseBattle.View
             string wl = Loc.Tl("{0}승 {1}패", e.Pvp.Wins, e.Pvp.Losses) + (e.Pvp.Streak > 1 ? Loc.Tl(" · {0}연승", e.Pvp.Streak) : "");
             TextMeshProUGUI wlt = Ui.Line(sub, wl, 24, Ui.Ink, TextAlignmentOptions.Left, true);
             Ui.Size(wlt.gameObject, -1, -1, 1);
-            Button pass = Ui.Button(sub, "btn_gold", Loc.Icon("trophy") + " " + Loc.Tl("시즌 패스"), 24, () => m_toast.Show(Loc.Tl("준비 중")));
+            Button pass = Ui.Button(sub, "btn_gold", Loc.Icon("trophy") + " " + Loc.Tl("시즌 패스"), 24, () => m_pass.Open());
+            if (MetaRules.SeasonClaimable(e)) Ui.Dot(pass.transform);
             Ui.Size(pass.gameObject, 230, 64);
 
             RectTransform head = Ui.Rect(card.transform, "ChestHead");
@@ -319,12 +348,13 @@ namespace DefenseBattle.View
                 NavButton(nav.transform, "flask", Loc.Tl("연구"), LobbyRules.FeatureNew(e, seen, "research"), false,
                     () => { LocalMeta.MarkSeen("research"); m_research.Open(); });
             if (Progress.FeatureUnlocked(e, "quests"))
-                NavButton(nav.transform, "scroll", Loc.Tl("퀘스트"), LobbyRules.FeatureNew(e, seen, "quests"), false,
-                    () => { LocalMeta.MarkSeen("quests"); m_toast.Show(Loc.Tl("준비 중")); });
+                NavButton(nav.transform, "scroll", Loc.Tl("퀘스트"), LobbyRules.FeatureNew(e, seen, "quests"),
+                    MetaRules.QuestClaimable(e, LocalMeta.Data.Daily.Progress, LocalMeta.Today), // 공짜 보상이라 받을 때까지 계속
+                    () => { LocalMeta.MarkSeen("quests"); m_quests.Open(); });
             if (Progress.FeatureUnlocked(e, "pvp"))
             {
-                NavButton(nav.transform, "trophy", Loc.Tl("로드"), false, false, () => m_toast.Show(Loc.Tl("준비 중")));
-                NavButton(nav.transform, "medal", Loc.Tl("랭킹"), false, false, () => m_toast.Show(Loc.Tl("준비 중")));
+                NavButton(nav.transform, "trophy", Loc.Tl("로드"), false, false, m_road.Open);
+                NavButton(nav.transform, "medal", Loc.Tl("랭킹"), false, false, m_rank.Open);
             }
         }
 
@@ -340,6 +370,25 @@ namespace DefenseBattle.View
         }
 
         void OpenShop() => m_shop.Open();
+
+        /// <summary>월정액 오늘의 보석 (menu.ts notice)</summary>
+        void MonthlyNotice(Transform body)
+        {
+            Image row = Ui.Frame(body, "paper_dark", 1.6f, "Monthly");
+            Ui.Size(row.gameObject, -1, 80);
+            Ui.Row(row.transform, 12, 20, 14, 8, 10);
+            TextMeshProUGUI t = Ui.Line(row.transform, Loc.Icon("calendar") + " " + Loc.Tl("월정액 오늘의 보석"), 24, Ui.Cream, TextAlignmentOptions.Left);
+            Ui.Size(t.gameObject, -1, -1, 1);
+            Ui.Size(Ui.Button(row.transform, "btn_green", Loc.Tl("받기") + " " + Loc.Icon("gem"), 22, ClaimMonthly).gameObject, 150, 62);
+        }
+
+        async void ClaimMonthly()
+        {
+            int n = await Server<int>(CloudApi.ClaimMonthly, null);
+            if (n <= 0) return;
+            m_audio.Play(Sfx.Coin);
+            m_toast.Show(Loc.Tl("월정액 보석 +{0} {1}", n, Loc.Icon("gem")));
+        }
 
         void Launch(BattleLaunch l)
         {
