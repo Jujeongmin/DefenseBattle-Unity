@@ -23,6 +23,9 @@ namespace DefenseBattle.View
         readonly MatchInfo m_match;
         readonly IPvpServer m_server;
         readonly IPvpLink m_link;
+        readonly Func<double> m_clock;
+        readonly double m_startDelay;
+        readonly double m_startAt;
         readonly byte[] m_snapBuf = new byte[PvpWire.MaxSnapshotBytes];
         readonly byte[] m_atkBuf = new byte[64];
         readonly BoardSnapshot m_recv = new BoardSnapshot();
@@ -37,7 +40,8 @@ namespace DefenseBattle.View
         public string Nick => m_match.Opponent?.Nick ?? "";
         public int Trophies => m_match.Opponent?.Trophies ?? 0;
         public uint Seed => m_match.Seed;
-        public double StartDelay { get; }
+        /// <summary>시작까지 남은 초 (시계가 있으면 지금 기준으로 줄어든다)</summary>
+        public double StartDelay => m_clock == null ? m_startDelay : Math.Max(0, m_startAt - m_clock());
         public string MatchId => m_match.MatchId;
 
         public event Action<AttackPayload> Attack;
@@ -45,10 +49,13 @@ namespace DefenseBattle.View
         public event Action<PvpOutcome> Finished;
 
         /// <param name="startDelay">시작까지 남은 초 (서버 시각 기준으로 계산한 값)</param>
-        public OnlineOpponent(MatchInfo match, double startDelay, IPvpServer server, IPvpLink link)
+        /// <param name="clock">실제 초 시계 - 주면 화면을 여는 동안 흐른 시간만큼 StartDelay 가 줄어든다</param>
+        public OnlineOpponent(MatchInfo match, double startDelay, IPvpServer server, IPvpLink link, Func<double> clock = null)
         {
             m_match = match;
-            StartDelay = startDelay;
+            m_startDelay = startDelay;
+            m_clock = clock;
+            m_startAt = clock != null ? clock() + startDelay : 0;
             m_server = server;
             m_link = link;
             link.SnapshotReceived += OnSnapshot;

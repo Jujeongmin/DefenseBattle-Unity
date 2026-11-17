@@ -32,6 +32,7 @@ namespace DefenseBattle.View.Tests
             public string PlayerId => "me";
             public readonly List<string> Calls = new List<string>();
             public MatchState PingReply = new MatchState { Status = MatchState.Playing };
+            public Queue<MatchState> PingReplies = new Queue<MatchState>();
             public PvpMatchResult DefeatReply;
             public PvpMatchResult ClaimReply;
             public PvpMatchResult LeaveReply;
@@ -44,7 +45,7 @@ namespace DefenseBattle.View.Tests
             public Task<QueueStatus> Poll() { Calls.Add("poll"); return Task.FromResult(PollReplies.Count > 0 ? PollReplies.Dequeue() : new QueueStatus { Status = QueueStatus.Waiting }); }
             public Task Cancel() { Calls.Add("cancel"); return Task.CompletedTask; }
             public Task<MatchState> Ready(string matchId, string joinCode) { Calls.Add("ready:" + joinCode); return Task.FromResult(ReadyReply(matchId, joinCode)); }
-            public Task<MatchState> Ping(string matchId) { Calls.Add("ping"); return Task.FromResult(PingReply); }
+            public Task<MatchState> Ping(string matchId) { Calls.Add("ping"); return Task.FromResult(PingReplies.Count > 0 ? PingReplies.Dequeue() : PingReply); }
             public Task<PvpMatchResult> Defeat(string matchId) { Calls.Add("defeat"); return Task.FromResult(DefeatReply); }
             public Task<PvpMatchResult> Leave(string matchId) { Calls.Add("leave"); return Task.FromResult(LeaveReply); }
             public Task<PvpMatchResult> ClaimAway(string matchId) { Calls.Add("claim"); return Task.FromResult(ClaimReply); }

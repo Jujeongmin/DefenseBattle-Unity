@@ -64,7 +64,7 @@ namespace DefenseBattle.View
             m_deck = new DeckPage(m_catalog, m_panel, m_modal, m_toast, m_audio, () => m_dirty = true);
             m_reveal = new RevealPopup(this, m_popups, m_catalog, m_audio);
             m_buy = new ProductBuy(m_toast, m_audio, m_reveal);
-            m_match = new MatchPopup(m_modal, this, m_audio);
+            m_match = new MatchPopup(m_modal, this, m_audio, m_toast);
             // 결제 팝업은 로비와 전투 결과 화면 위 모두에 뜬다 → 안내 글(Toast) 바로 아래 칸
             RectTransform offerHost = Ui.Rect(m_toast.transform.parent, "OfferHost");
             Ui.Fill(offerHost);
