@@ -1,0 +1,11 @@
+<!--
+  IL2CPP 코드 스트리핑에서 지키는 어셈블리.
+  서버 답(EconReply, EconState 등)은 Newtonsoft 가 리플렉션으로만 읽고 써서, 스트리핑이 생성자·필드·제네릭 타입을 지우면
+  기기에서만 "Value cannot be null. Parameter name: method" 로 실패한다 (에디터는 스트리핑이 없어 정상).
+-->
+<linker>
+  <assembly fullname="DefenseBattle.Core" preserve="all" />
+  <assembly fullname="DefenseBattle.View" preserve="all" />
+  <assembly fullname="Newtonsoft.Json" preserve="all" />
+  <assembly fullname="Unity.Services.CloudCode" preserve="all" />
+</linker>

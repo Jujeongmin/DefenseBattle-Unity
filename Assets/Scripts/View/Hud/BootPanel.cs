@@ -39,7 +39,7 @@ namespace DefenseBattle.View
                 }
                 catch (Exception e)
                 {
-                    Debug.LogWarning("[Boot] 접속 실패 " + i + "/" + Tries + ": " + e.Message);
+                    Debug.LogWarning("[Boot] 접속 실패 " + i + "/" + Tries + ": " + e);
                     if (i < Tries) await Task.Delay(800 * i);
                 }
             }
